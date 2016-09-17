@@ -13,7 +13,7 @@ class ALIZARINGAME_API AAlizarinGameGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
-	
+	AAlizarinGameGameMode(const FObjectInitializer& ObjectInitializer); 
 	
 	
 };

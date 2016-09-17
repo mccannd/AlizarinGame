@@ -38,8 +38,12 @@ void ABaseCharacter::CalculateDamage(float damage)
 {
 	if (isDead) return; // stop, stop! it's already dead!
 
+	// must have some sort of viable damage to prevent shield regeneration
 	if (damage > 0.01) shieldRechargeDelayRemaining = shieldRechargeDelay;
 
+	// health in this game obeys a "shield gate" mechanic to avoid instant death
+	// if damage breaks a shield, excess damage does NOT ordinarily affect health
+	// this may change in the future, perhaps with a penalty
 	if (currentShield > 0) {
 		currentShield -= damage;
 		if (currentShield < 0) currentShield = 0;

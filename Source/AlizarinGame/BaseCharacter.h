@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
 
 #include "BaseCharacter.generated.h"
 
 UCLASS()
-class ALIZARINGAME_API ABaseCharacter : public APawn 
+class ALIZARINGAME_API ABaseCharacter : public ACharacter 
 {
 	GENERATED_BODY()
 
@@ -58,6 +58,13 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Shield")
 		float shieldRechargeDelayRemaining = 0;
+
+	// regeneration during active recharge, per second
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Shield")
+		float shieldRechargeRate = 0; 
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Damage")
+		float plainDamageRate = 0; // generic damage over time
 
 	// Functions for taking damage (TO BE HOOKED UP TO INTERFACE)
 	UFUNCTION(BlueprintCallable, Category = "Damage")

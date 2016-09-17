@@ -14,14 +14,29 @@ class ALIZARINGAME_API AControllableCharacter : public ABaseCharacter
 	GENERATED_BODY()
 
 private:
-	FVector movementVector;
+	FVector xMovementVector;
+	FVector yMovementVector;
+
+	bool findMouseRotation(FRotator& rotation);
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Movement")
-		float moveSpeed;
+		float moveSpeed = 1;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
+
+	// Called every frame
+	virtual void Tick(float DeltaSeconds) override;
+
+	// player inputs
+	UFUNCTION()
+	void MoveVertical(float AxisValue);
+
+	UFUNCTION()
+	void MoveHorizontal(float AxisValue);
 
 	
 };
