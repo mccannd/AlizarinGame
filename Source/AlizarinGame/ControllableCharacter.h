@@ -1,8 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// The class used for the player-controlled character
 #pragma once
 
 #include "BaseCharacter.h"
+#include "BaseWeapon.h"
 #include "ControllableCharacter.generated.h"
 
 /**
@@ -31,12 +31,23 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
 
-	// player inputs
+	// The player's currently equipped weapon
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Equipment")
+		TSubclassOf<ABaseWeapon> activeWeapon = NULL;
+
+	/// player inputs
+
+	// movement inputs
 	UFUNCTION()
 	void MoveVertical(float AxisValue);
 
 	UFUNCTION()
 	void MoveHorizontal(float AxisValue);
 
-	
+	// weapon inputs
+	UFUNCTION()
+		void PrimaryFireHold();
+
+	UFUNCTION()
+		void PrimaryFireRelease();
 };

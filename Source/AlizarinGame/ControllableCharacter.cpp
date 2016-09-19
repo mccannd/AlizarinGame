@@ -60,6 +60,20 @@ void AControllableCharacter::SetupPlayerInputComponent(class UInputComponent* In
 		this,
 		&AControllableCharacter::MoveVertical
 		);
+
+	// set up mouse controls
+	InputComponent->BindAction(
+		"WeaponPrimary", 
+		IE_Pressed, 
+		this,
+		&AControllableCharacter::PrimaryFireHold
+		);
+	InputComponent->BindAction(
+		"WeaponPrimary",
+		IE_Released,
+		this,
+		&AControllableCharacter::PrimaryFireRelease
+		);
 }
 
 void AControllableCharacter::Tick(float DeltaSeconds)
@@ -71,7 +85,9 @@ void AControllableCharacter::Tick(float DeltaSeconds)
 	movementDirection.Normalize();
 
 	if (movementDirection.Size() > 0.01f && Controller != NULL) {		
-		if (GEngine)
+		bool debug = false;
+		
+		if (GEngine && debug)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, 
 				FString::Printf(TEXT("Direction Vector: (%f, %f, %f)"),
@@ -105,3 +121,18 @@ void AControllableCharacter::MoveHorizontal(float AxisValue)
 	xMovementVector = AxisValue * FVector(0.5f, -0.5f, 0.0f);
 }
 
+void AControllableCharacter::PrimaryFireHold()
+{
+	if (activeWeapon != NULL) {
+		ABaseWeapon* weapon = activeWeapon->GetDefaultObject<ABaseWeapon>();
+		if (weapon) weapon->FireHold();
+	}
+}
+
+void AControllableCharacter::PrimaryFireRelease()
+{
+	if (activeWeapon != NULL) {
+		ABaseWeapon* weapon = activeWeapon->GetDefaultObject<ABaseWeapon>();
+		if (weapon) weapon->FireRelease();
+	}
+}

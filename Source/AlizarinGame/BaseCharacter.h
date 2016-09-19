@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Class concerning all characters, both player and enemy
 #pragma once
 
 #include "GameFramework/Character.h"

@@ -8,6 +8,7 @@
 AAlizarinGameGameMode::AAlizarinGameGameMode(const class FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	// FClassFinder will search through the game's blueprint classes to find the player character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/MainPlayerCharacter"));
 	
 	DefaultPawnClass = PlayerPawnClassFinder.Class;
