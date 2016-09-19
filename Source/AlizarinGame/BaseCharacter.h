@@ -2,11 +2,11 @@
 #pragma once
 
 #include "GameFramework/Character.h"
-
+#include "DamageableInterface.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
-class ALIZARINGAME_API ABaseCharacter : public ACharacter 
+class ALIZARINGAME_API ABaseCharacter : public ACharacter, public IDamageableInterface
 {
 	GENERATED_BODY()
 
@@ -66,10 +66,9 @@ public:
 		float plainDamageRate = 0; // generic damage over time
 
 	// Functions for taking damage (TO BE HOOKED UP TO INTERFACE)
-	UFUNCTION(BlueprintCallable, Category = "Damage")
-		virtual void CalculateDamage(float damage);
-
-	UFUNCTION(BlueprintCallable, Category = "Damage")
-		virtual void TickDamage(float deltaSeconds);
+	
+	virtual void CalculateDamage_Implementation(float damage) override;
+	
+	virtual void TickDamage_Implementation(float deltaSeconds) override;
 
 };

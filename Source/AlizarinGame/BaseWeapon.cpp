@@ -30,7 +30,12 @@ void ABaseWeapon::Tick( float DeltaTime )
 void ABaseWeapon::FireHold()
 {
 	// only fire when timer allows
-	if (remainingShotDelay > 0.01) return;
+	if (remainingShotDelay > 0.01) {
+		if (debug) GEngine->AddOnScreenDebugMessage(-1, 5.f,
+			FColor::Blue,
+			FString::Printf(TEXT("Weapon remaining timer: %f"), remainingShotDelay));
+		return;
+	}
 
 	FVector origin = GetActorRotation().RotateVector(barrelLocation) + GetActorLocation();
 	FVector direction = GetActorRotation().Vector();
@@ -80,7 +85,7 @@ void ABaseWeapon::FireHold()
 				GetWorld(), 
 				beam, 
 				GetActorTransform(), 
-				true); // true destroys emitter after 1 spawn cycle
+				false); 
 
 			if (spawnedBeam) {
 				spawnedBeam->SetBeamSourcePoint(1, origin, 1);

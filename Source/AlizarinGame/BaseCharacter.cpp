@@ -34,7 +34,7 @@ void ABaseCharacter::SetupPlayerInputComponent(class UInputComponent* InputCompo
 }
 
 // damage is assumed to be a positive number subtracted from health
-void ABaseCharacter::CalculateDamage(float damage)
+void ABaseCharacter::CalculateDamage_Implementation(float damage)
 {
 	if (isDead) return; // stop, stop! it's already dead!
 
@@ -57,7 +57,7 @@ void ABaseCharacter::CalculateDamage(float damage)
 	}
 }
 
-void ABaseCharacter::TickDamage(float deltaSeconds) 
+void ABaseCharacter::TickDamage_Implementation(float deltaSeconds) 
 {
 	// first apply any damage over time effects
 	CalculateDamage(plainDamageRate * deltaSeconds);

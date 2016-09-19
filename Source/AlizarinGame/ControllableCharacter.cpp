@@ -74,6 +74,7 @@ void AControllableCharacter::EquipWeapon(TSubclassOf<ABaseWeapon> toEquip)
 			FAttachmentTransformRules rules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);
 			resultWeapon->AttachToActor(this, rules);
 			resultWeapon->SetActorRelativeLocation(FVector(50, 0, 50));
+			resultWeapon->SetActorTickEnabled(true);
 		}
 	}
 }
