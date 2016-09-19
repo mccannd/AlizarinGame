@@ -35,6 +35,22 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Equipment")
 		TSubclassOf<ABaseWeapon> activeWeapon = NULL;
 
+	// Enable movement Debug printing on screen?
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Debug")
+		bool moveDebug = false;
+
+	// Enable mouse Debug printing on screen?
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Debug")
+		bool mouseDebug = false;
+
+	// Enable equipment Debug printing on screen?
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Debug")
+		bool equipDebug = false;
+
+	// Equip a weapon
+	UFUNCTION(BlueprintCallable, Category = "Equipment")
+		void EquipWeapon(TSubclassOf<ABaseWeapon> toEquip);
+
 	/// player inputs
 
 	// movement inputs

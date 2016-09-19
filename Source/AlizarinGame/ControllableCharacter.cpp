@@ -16,6 +16,19 @@ bool AControllableCharacter::findMouseRotation(FRotator& rotation)
 		bool mouseFound = control->DeprojectMousePositionToWorld(mousePos, mouseDir);
 		if (!mouseFound) return false; // conversion failed
 		
+		if (mouseDebug) {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+				FString::Printf(TEXT("Mouse direction Vector: (%f, %f, %f)"),
+					mouseDir.X,
+					mouseDir.Y,
+					mouseDir.Z));
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+				FString::Printf(TEXT("Mouse location Vector: (%f, %f, %f)"),
+					mousePos.X,
+					mousePos.Y,
+					mousePos.Z));
+		}
+
 		FVector location = this->GetActorLocation();
 		FVector worldUp = FVector(0, 0, 1);
 
@@ -23,8 +36,8 @@ bool AControllableCharacter::findMouseRotation(FRotator& rotation)
 		float denom = FVector::DotProduct(mouseDir, worldUp);
 
 		FVector targetOnPlane = mouseDir * num / denom + mousePos;
-		rotation = FRotationMatrix::MakeFromX(location - targetOnPlane).Rotator();
-		rotation = FRotator(0, rotation.Yaw + 180, 0);
+		rotation = FRotationMatrix::MakeFromX(targetOnPlane - location).Rotator();
+		rotation = FRotator(0, rotation.Yaw, 0);
 
 		return true;
 	} 
@@ -43,6 +56,26 @@ void AControllableCharacter::BeginPlay()
 	// ensures that on creation, input will apply to this pawn
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
+	EquipWeapon(activeWeapon);
+}
+
+void AControllableCharacter::EquipWeapon(TSubclassOf<ABaseWeapon> toEquip)
+{
+	if (toEquip) {
+		ABaseWeapon* weapon = toEquip->GetDefaultObject<ABaseWeapon>();
+		if (weapon) {
+			FActorSpawnParameters params = FActorSpawnParameters();
+			params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			//params.bNoCollisionFail = true; // ensure collision doesn't prevent spawn
+			ABaseWeapon* resultWeapon = 
+				GetWorld()->SpawnActor<ABaseWeapon>(weapon->GetClass(), params);
+
+			// attach the weapon to the player
+			FAttachmentTransformRules rules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);
+			resultWeapon->AttachToActor(this, rules);
+			resultWeapon->SetActorRelativeLocation(FVector(50, 0, 50));
+		}
+	}
 }
 
 void AControllableCharacter::SetupPlayerInputComponent(class UInputComponent* InputComponent)
@@ -85,9 +118,7 @@ void AControllableCharacter::Tick(float DeltaSeconds)
 	movementDirection.Normalize();
 
 	if (movementDirection.Size() > 0.01f && Controller != NULL) {		
-		bool debug = false;
-		
-		if (GEngine && debug)
+		if (GEngine && moveDebug)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, 
 				FString::Printf(TEXT("Direction Vector: (%f, %f, %f)"),
@@ -126,6 +157,14 @@ void AControllableCharacter::PrimaryFireHold()
 	if (activeWeapon != NULL) {
 		ABaseWeapon* weapon = activeWeapon->GetDefaultObject<ABaseWeapon>();
 		if (weapon) weapon->FireHold();
+		if (equipDebug) GEngine->AddOnScreenDebugMessage(-1, 5.f, 
+			FColor::Blue,
+			TEXT("Fired a weapon"));
+	}
+	else {
+		if (equipDebug) GEngine->AddOnScreenDebugMessage(-1, 5.f,
+			FColor::Blue,
+			TEXT("Active weapon is NULL"));
 	}
 }
 

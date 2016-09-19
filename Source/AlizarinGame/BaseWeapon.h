@@ -23,6 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
+	// Enable Debug printing on screen
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+		bool debug = false;
+
 	// the name of the weapon
 	// in the future:
 	// weapons that are not unique will have prefixes and affixes associated to stat boosts
@@ -51,7 +55,7 @@ public:
 
 	// where the weapon will fire from, a blueprint component
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Functionality")
-		UArrowComponent* barrel;
+		FVector barrelLocation = FVector(0, 0, 0);
 
 	// time between shots called by FireHold
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
@@ -73,4 +77,7 @@ public:
 	// maximum range of the weapon in units
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
 		float range = 2000;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Appearance")
+		UParticleSystem* beam = NULL;
 };

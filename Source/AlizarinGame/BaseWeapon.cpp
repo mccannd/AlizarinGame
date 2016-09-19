@@ -32,13 +32,19 @@ void ABaseWeapon::FireHold()
 	// only fire when timer allows
 	if (remainingShotDelay > 0.01) return;
 
-	if (!barrel) return;
-	FVector origin = barrel->GetComponentLocation();
-	FVector direction = barrel->GetComponentRotation().Vector();
+	FVector origin = GetActorRotation().RotateVector(barrelLocation) + GetActorLocation();
+	FVector direction = GetActorRotation().Vector();
 	FVector end = origin + range * direction;
 
 	// traces against level and characters
 	ECollisionChannel channel = ECC_WorldDynamic; 
+
+	if (debug) {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f,
+			FColor::Blue,
+			TEXT("Weapon confirmed fire"));
+	}
+	
 
 	// do not request any additional details from collision
 	FCollisionQueryParams params(false);
@@ -53,7 +59,45 @@ void ABaseWeapon::FireHold()
 			channel, 
 			params);
 
-		// need to get damageable interface working first
+		if (collision.IsValidBlockingHit()) {
+			// need to get damageable interface working first to inflict damage
+			end = collision.ImpactPoint;
+			if (debug) {
+				GEngine->AddOnScreenDebugMessage(-1, 5.f,
+					FColor::Blue,
+					TEXT("Weapon confirmed collision"));
+			}
+		}
+
+		if (beam) {
+			if (debug) {
+				GEngine->AddOnScreenDebugMessage(-1, 5.f,
+					FColor::Blue,
+					TEXT("Weapon spawning beam"));
+			}
+			// spawn a particle beam
+			UParticleSystemComponent* spawnedBeam = UGameplayStatics::SpawnEmitterAtLocation(
+				GetWorld(), 
+				beam, 
+				GetActorTransform(), 
+				true); // true destroys emitter after 1 spawn cycle
+
+			if (spawnedBeam) {
+				spawnedBeam->SetBeamSourcePoint(1, origin, 1);
+				spawnedBeam->SetBeamEndPoint(1, end);
+				if (debug) {
+					GEngine->AddOnScreenDebugMessage(-1, 5.f,
+						FColor::Blue,
+						TEXT("Weapon has spawned a beam"));
+				}
+			}
+			else if (debug) {
+				GEngine->AddOnScreenDebugMessage(-1, 5.f,
+					FColor::Blue,
+					TEXT("Beam resulted in NULL"));
+			}
+		}
+		
 	}
 	else {
 
