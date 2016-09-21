@@ -1,4 +1,6 @@
 // Class concerning all characters, both player and enemy
+// covers baseline health mechanics but not complex interactions
+// most character behaviors outside of controllablecharacter handled with BP AI
 #pragma once
 
 #include "GameFramework/Character.h"
@@ -65,8 +67,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Damage")
 		float plainDamageRate = 0; // generic damage over time
 
-	// Functions for taking damage (TO BE HOOKED UP TO INTERFACE)
 	
+	// implementation of interface requires odd _Implementation syntax
+	// Unreal Macromagics, UFUNCTION shenanigans handled in DamageableInterface
 	virtual void CalculateDamage_Implementation(float damage) override;
 	
 	virtual void TickDamage_Implementation(float deltaSeconds) override;

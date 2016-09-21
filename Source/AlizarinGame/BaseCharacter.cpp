@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AlizarinGame.h"
 #include "BaseCharacter.h"
@@ -16,7 +15,6 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -30,7 +28,6 @@ void ABaseCharacter::Tick( float DeltaTime )
 void ABaseCharacter::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
 	Super::SetupPlayerInputComponent(InputComponent);
-
 }
 
 // damage is assumed to be a positive number subtracted from health
