@@ -27,7 +27,7 @@ void ABaseWeapon::Tick( float DeltaTime )
 	
 	if (remainingShotDelay < 0) remainingShotDelay = 0;
 
-	//if (autoFireOn);
+	if (autoFireOn) IWeaponInterface::Execute_FireHold(this);
 }
 
 
@@ -37,33 +37,16 @@ void ABaseWeapon::FireHold_Implementation()
 
 	// only fire when timer allows
 	if (remainingShotDelay > 0.01) {
-		if (debug) GEngine->AddOnScreenDebugMessage(-1, 5.f,
-			FColor::Blue,
-			FString::Printf(TEXT("Weapon remaining timer: %f"), remainingShotDelay));
 		return;
 	}
 
 	//if (root == NULL) return; // should prob debug here
 	FVector origin = GetActorRotation().RotateVector(barrelLocation) + GetActorLocation();
 	FVector direction = GetActorRotation().Vector();
-
-	if (debug) 
-		GEngine->AddOnScreenDebugMessage(-1, 5.f,
-			FColor::Blue,
-			FString::Printf(TEXT("DirectionVector: (%f, %f, %f)"), direction.X, direction.Y, direction.Z));
-	
-
 	FVector end = origin + range * direction;
 
 	// traces against level and characters
 	ECollisionChannel channel = ECC_WorldDynamic;
-
-	if (debug) {
-		GEngine->AddOnScreenDebugMessage(-1, 5.f,
-			FColor::Blue,
-			TEXT("Weapon confirmed fire"));
-	}
-
 
 	// do not request any additional details from collision
 	FCollisionQueryParams params(false);
@@ -84,32 +67,27 @@ void ABaseWeapon::FireHold_Implementation()
 		}
 
 		if (beam) {
-			if (debug) {
-				GEngine->AddOnScreenDebugMessage(-1, 5.f,
-					FColor::Blue,
-					TEXT("Weapon spawning beam"));
-			}
 			// spawn a particle beam
-			UParticleSystemComponent* spawnedBeam = UGameplayStatics::SpawnEmitterAtLocation(
-				GetWorld(),
-				beam,
-				GetActorTransform(),
-				false);
+			UParticleSystemComponent* spawnedBeam = 
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), beam, 
+					GetActorTransform(), false);
 
 			if (spawnedBeam) {
 				spawnedBeam->SetBeamSourcePoint(0, origin, 0);
 				spawnedBeam->SetBeamEndPoint(0, end);
-				if (debug) {
-					GEngine->AddOnScreenDebugMessage(-1, 5.f,
-						FColor::Blue,
-						TEXT("Weapon has spawned a beam"));
-				}
 			}
-			else if (debug) {
-				GEngine->AddOnScreenDebugMessage(-1, 5.f,
-					FColor::Blue,
-					TEXT("Beam resulted in NULL"));
-			}
+		}
+
+		if (impact && collision.IsValidBlockingHit()) {
+			UParticleSystemComponent* spawnedImpact = 
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), impact,
+					FTransform(FRotator(), end), false);
+		}
+
+		if (muzzleFlash) { 
+			UParticleSystemComponent* spawnedFlash =
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), muzzleFlash,
+					FTransform(GetActorRotation(), origin), false);
 		}
 
 	}

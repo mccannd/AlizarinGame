@@ -82,6 +82,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Statistics")
 		float range = 2000;
 
+
+	// blueprint-editable graphics
+
+	// Particle Ribbon between weapon and impact location
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Appearance")
 		UParticleSystem* beam = NULL;
+
+	// Particle System that plays at successful impact location
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Appearance")
+		UParticleSystem* impact = NULL;
+
+	// Particle System that plays at the weapon's location every shot
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Appearance")
+		UParticleSystem* muzzleFlash = NULL;
 };
