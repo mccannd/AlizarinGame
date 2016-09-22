@@ -21,7 +21,7 @@ void ABaseCharacter::BeginPlay()
 void ABaseCharacter::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
-	TickDamage(DeltaTime);
+	IDamageableInterface::Execute_TickDamage(this, DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -57,7 +57,7 @@ void ABaseCharacter::CalculateDamage_Implementation(float damage)
 void ABaseCharacter::TickDamage_Implementation(float deltaSeconds) 
 {
 	// first apply any damage over time effects
-	CalculateDamage(plainDamageRate * deltaSeconds);
+	IDamageableInterface::Execute_CalculateDamage(this, plainDamageRate * deltaSeconds);
 
 	// handle shield recharge
 	shieldRechargeDelayRemaining -= deltaSeconds;

@@ -31,9 +31,13 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
 
-	// The player's currently equipped weapon
+	// The player's currently equipped weapon, cannot be changed in BP dropdown
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Equipment")
 		ABaseWeapon* activeWeapon = NULL;
+
+	// The player's default weapon when starting, CAN be changed to BP class
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Equipment")
+		TSubclassOf<ABaseWeapon> defaultWeapon = NULL;
 
 	// Enable movement Debug printing on screen?
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Debug")

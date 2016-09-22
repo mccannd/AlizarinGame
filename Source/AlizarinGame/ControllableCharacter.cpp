@@ -56,6 +56,7 @@ void AControllableCharacter::BeginPlay()
 	// ensures that on creation, input will apply to this pawn
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
+	if (defaultWeapon) activeWeapon = defaultWeapon->GetDefaultObject<ABaseWeapon>();
 	EquipWeapon(activeWeapon);
 }
 
@@ -155,7 +156,7 @@ void AControllableCharacter::MoveHorizontal(float AxisValue)
 void AControllableCharacter::PrimaryFireHold()
 {
 	if (activeWeapon != NULL) {
-		activeWeapon->FireHold();
+		IWeaponInterface::Execute_FireHold(activeWeapon);
 		if (equipDebug) GEngine->AddOnScreenDebugMessage(-1, 5.f, 
 			FColor::Blue,
 			TEXT("Fired a weapon"));
@@ -170,6 +171,6 @@ void AControllableCharacter::PrimaryFireHold()
 void AControllableCharacter::PrimaryFireRelease()
 {
 	if (activeWeapon != NULL) {
-		activeWeapon->FireRelease();
+		IWeaponInterface::Execute_FireRelease(activeWeapon);
 	}
 }
