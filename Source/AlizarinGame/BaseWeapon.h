@@ -14,6 +14,8 @@ class ALIZARINGAME_API ABaseWeapon : public AActor, public IWeaponInterface
 private:
 	// timer until next weapon shot available
 	float remainingShotDelay = 0.0;
+	bool autoFireOn = false;
+
 public:	
 	// Sets default values for this actor's properties
 	ABaseWeapon();
@@ -52,6 +54,7 @@ public:
 
 	// called when releasing mouse, does nothing unless this is a "charge" weapon
 	virtual void FireRelease_Implementation() override;
+
 
 	/// interface implementation ends
 	// where the weapon will fire from, a blueprint component

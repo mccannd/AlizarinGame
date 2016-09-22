@@ -75,7 +75,7 @@ void AControllableCharacter::EquipWeapon(ABaseWeapon* toEquip)
 		resultWeapon->AttachToActor(this, rules);
 		resultWeapon->SetActorRelativeLocation(FVector(50, 0, 50));
 		resultWeapon->SetActorTickEnabled(true);
-		
+		activeWeapon = resultWeapon;
 	}
 }
 

@@ -24,11 +24,17 @@ void ABaseWeapon::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
 	remainingShotDelay -= DeltaTime;
+	
 	if (remainingShotDelay < 0) remainingShotDelay = 0;
+
+	//if (autoFireOn);
 }
+
 
 void ABaseWeapon::FireHold_Implementation()
 {
+	autoFireOn = true;
+
 	// only fire when timer allows
 	if (remainingShotDelay > 0.01) {
 		if (debug) GEngine->AddOnScreenDebugMessage(-1, 5.f,
@@ -37,19 +43,27 @@ void ABaseWeapon::FireHold_Implementation()
 		return;
 	}
 
+	//if (root == NULL) return; // should prob debug here
 	FVector origin = GetActorRotation().RotateVector(barrelLocation) + GetActorLocation();
 	FVector direction = GetActorRotation().Vector();
+
+	if (debug) 
+		GEngine->AddOnScreenDebugMessage(-1, 5.f,
+			FColor::Blue,
+			FString::Printf(TEXT("DirectionVector: (%f, %f, %f)"), direction.X, direction.Y, direction.Z));
+	
+
 	FVector end = origin + range * direction;
 
 	// traces against level and characters
-	ECollisionChannel channel = ECC_WorldDynamic; 
+	ECollisionChannel channel = ECC_WorldDynamic;
 
 	if (debug) {
 		GEngine->AddOnScreenDebugMessage(-1, 5.f,
 			FColor::Blue,
 			TEXT("Weapon confirmed fire"));
 	}
-	
+
 
 	// do not request any additional details from collision
 	FCollisionQueryParams params(false);
@@ -57,12 +71,7 @@ void ABaseWeapon::FireHold_Implementation()
 	if (hitscanWeapon) {
 		// trace a ray from weapon to range
 		FHitResult collision = FHitResult(ForceInit);
-		GetWorld()->LineTraceSingleByChannel(
-			collision, 
-			origin, 
-			end, 
-			channel, 
-			params);
+		GetWorld()->LineTraceSingleByChannel(collision, origin, end, channel, params);
 
 		if (collision.IsValidBlockingHit()) {
 			// need to get damageable interface working first to inflict damage
@@ -82,14 +91,14 @@ void ABaseWeapon::FireHold_Implementation()
 			}
 			// spawn a particle beam
 			UParticleSystemComponent* spawnedBeam = UGameplayStatics::SpawnEmitterAtLocation(
-				GetWorld(), 
-				beam, 
-				GetActorTransform(), 
-				false); 
+				GetWorld(),
+				beam,
+				GetActorTransform(),
+				false);
 
 			if (spawnedBeam) {
-				spawnedBeam->SetBeamSourcePoint(1, origin, 1);
-				spawnedBeam->SetBeamEndPoint(1, end);
+				spawnedBeam->SetBeamSourcePoint(0, origin, 0);
+				spawnedBeam->SetBeamEndPoint(0, end);
 				if (debug) {
 					GEngine->AddOnScreenDebugMessage(-1, 5.f,
 						FColor::Blue,
@@ -102,17 +111,18 @@ void ABaseWeapon::FireHold_Implementation()
 					TEXT("Beam resulted in NULL"));
 			}
 		}
-		
+
 	}
 	else {
 
 	}
-	
+
 
 	remainingShotDelay = shotDelay;
 }
 
 void ABaseWeapon::FireRelease_Implementation()
 {
+	autoFireOn = false;
 	if (!chargeWeapon) return;
 }
