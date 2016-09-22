@@ -27,7 +27,7 @@ void ABaseWeapon::Tick( float DeltaTime )
 	if (remainingShotDelay < 0) remainingShotDelay = 0;
 }
 
-void ABaseWeapon::FireHold()
+void ABaseWeapon::FireHold_Implementation()
 {
 	// only fire when timer allows
 	if (remainingShotDelay > 0.01) {
@@ -112,7 +112,7 @@ void ABaseWeapon::FireHold()
 	remainingShotDelay = shotDelay;
 }
 
-void ABaseWeapon::FireRelease()
+void ABaseWeapon::FireRelease_Implementation()
 {
 	if (!chargeWeapon) return;
 }

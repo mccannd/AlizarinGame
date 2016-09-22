@@ -5,8 +5,8 @@
 #include "WeaponInterface.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(Blueprintable, MinimalAPI)
-class UWeaponInterface : public UInterface
+UINTERFACE(Blueprintable)
+class ALIZARINGAME_API UWeaponInterface : public UInterface
 {
 	GENERATED_UINTERFACE_BODY()
 };

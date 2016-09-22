@@ -33,7 +33,7 @@ public:
 
 	// The player's currently equipped weapon
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Equipment")
-		TSubclassOf<ABaseWeapon> activeWeapon = NULL;
+		ABaseWeapon* activeWeapon = NULL;
 
 	// Enable movement Debug printing on screen?
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Debug")
@@ -49,7 +49,7 @@ public:
 
 	// Equip a weapon
 	UFUNCTION(BlueprintCallable, Category = "Equipment")
-		void EquipWeapon(TSubclassOf<ABaseWeapon> toEquip);
+		void EquipWeapon(ABaseWeapon* toEquip);
 
 	/// player inputs
 

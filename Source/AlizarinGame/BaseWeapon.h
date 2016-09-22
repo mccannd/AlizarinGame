@@ -3,10 +3,11 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "WeaponInterface.h"
 #include "BaseWeapon.generated.h"
 
 UCLASS()
-class ALIZARINGAME_API ABaseWeapon : public AActor
+class ALIZARINGAME_API ABaseWeapon : public AActor, public IWeaponInterface
 {
 	GENERATED_BODY()
 	
@@ -45,14 +46,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface")
 		FString flavortext = "";
 
+	/// Interface implementation begins
 	// the regular weapon firing, called repeatedly when mouse held down
-	UFUNCTION(BlueprintCallable, Category = "Functionality")
-		void FireHold();
+	virtual void FireHold_Implementation() override;
 
 	// called when releasing mouse, does nothing unless this is a "charge" weapon
-	UFUNCTION(BlueprintCallable, Category = "Functionality")
-		void FireRelease();
+	virtual void FireRelease_Implementation() override;
 
+	/// interface implementation ends
 	// where the weapon will fire from, a blueprint component
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Functionality")
 		FVector barrelLocation = FVector(0, 0, 0);

@@ -59,23 +59,22 @@ void AControllableCharacter::BeginPlay()
 	EquipWeapon(activeWeapon);
 }
 
-void AControllableCharacter::EquipWeapon(TSubclassOf<ABaseWeapon> toEquip)
+void AControllableCharacter::EquipWeapon(ABaseWeapon* toEquip)
 {
 	if (toEquip) {
-		ABaseWeapon* weapon = toEquip->GetDefaultObject<ABaseWeapon>();
-		if (weapon) {
-			FActorSpawnParameters params = FActorSpawnParameters();
-			params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			//params.bNoCollisionFail = true; // ensure collision doesn't prevent spawn
-			ABaseWeapon* resultWeapon = 
-				GetWorld()->SpawnActor<ABaseWeapon>(weapon->GetClass(), params);
+		
+		FActorSpawnParameters params = FActorSpawnParameters();
+		params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		//params.bNoCollisionFail = true; // ensure collision doesn't prevent spawn
+		ABaseWeapon* resultWeapon = 
+			GetWorld()->SpawnActor<ABaseWeapon>(toEquip->GetClass(), params);
 
-			// attach the weapon to the player
-			FAttachmentTransformRules rules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);
-			resultWeapon->AttachToActor(this, rules);
-			resultWeapon->SetActorRelativeLocation(FVector(50, 0, 50));
-			resultWeapon->SetActorTickEnabled(true);
-		}
+		// attach the weapon to the player
+		FAttachmentTransformRules rules = FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false);
+		resultWeapon->AttachToActor(this, rules);
+		resultWeapon->SetActorRelativeLocation(FVector(50, 0, 50));
+		resultWeapon->SetActorTickEnabled(true);
+		
 	}
 }
 
@@ -156,8 +155,7 @@ void AControllableCharacter::MoveHorizontal(float AxisValue)
 void AControllableCharacter::PrimaryFireHold()
 {
 	if (activeWeapon != NULL) {
-		ABaseWeapon* weapon = activeWeapon->GetDefaultObject<ABaseWeapon>();
-		if (weapon) weapon->FireHold();
+		activeWeapon->FireHold();
 		if (equipDebug) GEngine->AddOnScreenDebugMessage(-1, 5.f, 
 			FColor::Blue,
 			TEXT("Fired a weapon"));
@@ -172,7 +170,6 @@ void AControllableCharacter::PrimaryFireHold()
 void AControllableCharacter::PrimaryFireRelease()
 {
 	if (activeWeapon != NULL) {
-		ABaseWeapon* weapon = activeWeapon->GetDefaultObject<ABaseWeapon>();
-		if (weapon) weapon->FireRelease();
+		activeWeapon->FireRelease();
 	}
 }
