@@ -3,11 +3,11 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "WeaponInterface.h"
+
 #include "BaseWeapon.generated.h"
 
 UCLASS()
-class ALIZARINGAME_API ABaseWeapon : public AActor, public IWeaponInterface
+class ALIZARINGAME_API ABaseWeapon : public AActor
 {
 	GENERATED_BODY()
 	
@@ -15,10 +15,15 @@ private:
 	// timer until next weapon shot available
 	float remainingShotDelay = 0.0;
 	bool autoFireOn = false;
-
+	AActor* owningCharacter = NULL;
 public:	
 	// Sets default values for this actor's properties
 	ABaseWeapon();
+
+	UFUNCTION(BlueprintCallable, Category = "Owner")
+		void SetOwningCharacter(AActor* newChar);
+
+	FRotator validRotation = FRotator();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -50,11 +55,14 @@ public:
 
 	/// Interface implementation begins
 	// the regular weapon firing, called repeatedly when mouse held down
-	virtual void FireHold_Implementation() override;
+	//virtual void FireHold_Implementation() override;
+	UFUNCTION(BlueprintCallable, Category = "Functionality")
+		void FireHold();
 
 	// called when releasing mouse, does nothing unless this is a "charge" weapon
-	virtual void FireRelease_Implementation() override;
-
+	//virtual void FireRelease_Implementation() override;
+	UFUNCTION(BlueprintCallable, Category = "Functionality")
+		void FireRelease();
 
 	/// interface implementation ends
 	// where the weapon will fire from, a blueprint component

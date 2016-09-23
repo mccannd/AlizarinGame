@@ -27,11 +27,20 @@ void ABaseWeapon::Tick( float DeltaTime )
 	
 	if (remainingShotDelay < 0) remainingShotDelay = 0;
 
-	if (autoFireOn) IWeaponInterface::Execute_FireHold(this);
+	if (autoFireOn) FireHold(); //IWeaponInterface::Execute_FireHold(this);
 }
 
 
-void ABaseWeapon::FireHold_Implementation()
+void ABaseWeapon::SetOwningCharacter(AActor *newChar)
+{
+	owningCharacter = newChar;
+	GEngine->AddOnScreenDebugMessage(-1, 5.f,
+		FColor::Blue,
+		TEXT("Set an owning character"));
+}
+
+//void ABaseWeapon::FireHold_Implementation()
+void ABaseWeapon::FireHold()
 {
 	autoFireOn = true;
 
@@ -40,9 +49,10 @@ void ABaseWeapon::FireHold_Implementation()
 		return;
 	}
 
-	//if (root == NULL) return; // should prob debug here
-	FVector origin = GetActorRotation().RotateVector(barrelLocation) + GetActorLocation();
-	FVector direction = GetActorRotation().Vector();
+
+
+	FVector origin = validRotation.RotateVector(barrelLocation) + GetActorLocation();
+	FVector direction = validRotation.Vector();
 	FVector end = origin + range * direction;
 
 	// traces against level and characters
@@ -99,7 +109,8 @@ void ABaseWeapon::FireHold_Implementation()
 	remainingShotDelay = shotDelay;
 }
 
-void ABaseWeapon::FireRelease_Implementation()
+//void ABaseWeapon::FireRelease_Implementation()
+void ABaseWeapon::FireRelease()
 {
 	autoFireOn = false;
 	if (!chargeWeapon) return;

@@ -76,6 +76,8 @@ void AControllableCharacter::EquipWeapon(ABaseWeapon* toEquip)
 		resultWeapon->SetActorRelativeLocation(FVector(50, 0, 50));
 		resultWeapon->SetActorTickEnabled(true);
 		activeWeapon = resultWeapon;
+		activeWeapon->SetOwningCharacter(this);
+		
 	}
 }
 
@@ -138,6 +140,8 @@ void AControllableCharacter::Tick(float DeltaSeconds)
 	if (foundTarget) {
 		SetActorRotation(FMath::RInterpTo(current, target, DeltaSeconds, 90.0));
 	}
+
+	if (activeWeapon) activeWeapon->validRotation = target;
 }
 
 // Movement: game camera is fixed at 45 degrees away from world coordinate system
@@ -156,7 +160,8 @@ void AControllableCharacter::MoveHorizontal(float AxisValue)
 void AControllableCharacter::PrimaryFireHold()
 {
 	if (activeWeapon != NULL) {
-		IWeaponInterface::Execute_FireHold(activeWeapon);
+		//IWeaponInterface::Execute_FireHold(activeWeapon);
+		activeWeapon->FireHold();
 		if (equipDebug) GEngine->AddOnScreenDebugMessage(-1, 5.f, 
 			FColor::Blue,
 			TEXT("Fired a weapon"));
@@ -171,6 +176,7 @@ void AControllableCharacter::PrimaryFireHold()
 void AControllableCharacter::PrimaryFireRelease()
 {
 	if (activeWeapon != NULL) {
-		IWeaponInterface::Execute_FireRelease(activeWeapon);
+		activeWeapon->FireRelease();
+		//IWeaponInterface::Execute_FireRelease(activeWeapon);
 	}
 }
