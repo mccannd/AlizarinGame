@@ -18,7 +18,14 @@ ADungeonGenerator::ADungeonGenerator()
 void ADungeonGenerator::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// currently uses the naive recursive implementation
+	// later, this will be replaced with the recursive call of each found path
+	int northSouthCells = FMath::RandRange(5, 10);
+	int eastWestCells = FMath::RandRange(5, 10);
+	int startX = FMath::RandRange(2, 4);
+	int startY = FMath::RandRange(2, 4);
+	GenerateMaze(eastWestCells, northSouthCells, startX, startY);
 }
 
 // Called every frame
@@ -29,7 +36,7 @@ void ADungeonGenerator::Tick( float DeltaTime )
 }
 
 // Initializes the generation of the levels
-// (maybe a misnomer, isn't an actual "maze"
+// (maybe a misnomer, isn't an actual "maze")
 void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 start_y)
 {
 	cells_x = x;
