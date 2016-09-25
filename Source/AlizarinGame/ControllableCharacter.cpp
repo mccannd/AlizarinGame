@@ -1,8 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// The class used for the player-controlled character
 
 #include "AlizarinGame.h"
 #include "ControllableCharacter.h"
-
 
 // modifies a rotator to look at the mouse. returns true if successful, false otherwise
 bool AControllableCharacter::findMouseRotation(FRotator& rotation)

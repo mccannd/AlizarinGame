@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// may be deprecated. UInterface can't replace something like a java interface
 #pragma once
 
 #include "WeaponInterface.generated.h"
