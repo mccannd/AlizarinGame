@@ -200,7 +200,7 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 
 		// begin with a random initial rotation
 		int initialRotations = FMath::RandRange(0, 3);
-		for (int i = 0; i <= initialRotations; i++) {
+		for (int i = 0; i < initialRotations; i++) {
 			rotateCW(n, e, s, w);
 		}
 

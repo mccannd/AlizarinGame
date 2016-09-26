@@ -53,7 +53,7 @@ private:
 	int32 origin_y;
 
 	// distance between centers of each cell in CM
-	float cell_length = 2000.0f;
+	float cell_length = 3000.0f;
 
 public:	
 	// Sets default values for this actor's properties
