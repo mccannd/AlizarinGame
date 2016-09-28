@@ -16,6 +16,8 @@ ABaseWeapon::ABaseWeapon()
 void ABaseWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+	// for some reason GetWorld() doesnt actually seem to work from Tick
+	validWorld = GetWorld();
 	
 }
 
@@ -49,8 +51,6 @@ void ABaseWeapon::FireHold()
 		return;
 	}
 
-
-
 	FVector origin = validRotation.RotateVector(barrelLocation) + GetActorLocation();
 	FVector direction = validRotation.Vector();
 	FVector end = origin + range * direction;
@@ -64,7 +64,7 @@ void ABaseWeapon::FireHold()
 	if (hitscanWeapon) {
 		// trace a ray from weapon to range
 		FHitResult collision = FHitResult(ForceInit);
-		GetWorld()->LineTraceSingleByChannel(collision, origin, end, channel, params);
+		validWorld->LineTraceSingleByChannel(collision, origin, end, channel, params);
 
 		if (collision.IsValidBlockingHit()) {
 			// need to get damageable interface working first to inflict damage
@@ -104,7 +104,6 @@ void ABaseWeapon::FireHold()
 	else {
 
 	}
-
 
 	remainingShotDelay = shotDelay;
 }

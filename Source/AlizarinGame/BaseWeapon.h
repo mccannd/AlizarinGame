@@ -24,6 +24,7 @@ public:
 		void SetOwningCharacter(AActor* newChar);
 
 	FRotator validRotation = FRotator();
+	UWorld* validWorld;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
