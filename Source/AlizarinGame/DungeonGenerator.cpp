@@ -62,6 +62,65 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 	GenerateCell(start_x, start_y);
 }
 
+// helper for testing orientationg of big room candidates
+void rotateBigCW(TArray<FVector2D>& cells) {
+	for (FVector2D cell : cells) {
+		int temp = cell.X;
+		cell.X = -cell.Y;
+		cell.Y = temp;
+	}
+}
+
+// check if a big room fits at its current rotation at X and y
+bool ADungeonGenerator::bigRoomFits(int32 x, int32 y,
+	TArray<FVector2D>& allCells, 
+	FVector2D& enter, FVector2D& exit,
+	FVector2D& entryDir, FVector2D& exitDir)
+{
+	// check if any rooms are out of bounds
+	// check if any rooms inside have been initialized
+	for (FVector2D room : allCells) {
+		int testX = (int)room.X + x;
+		int testY = (int)room.Y + y;
+		if (testX < 0 || testX >= cells_x) return false; // OOB
+		if (testY < 0 || testY >= cells_y) return false; // OOB
+		if (all_rooms[testX].roomColumns[testY].initialized) return false;
+	}
+	// check if doorways lead to blocked areas
+	int e1x = (int)enter.X + (int)entryDir.X + x;
+	int e1y = (int)enter.Y + (int)entryDir.Y + y;
+	if (e1x < 0 || e1x >= cells_x) return false;
+	if (e1y < 0 || e1y >= cells_y) return false;
+	if (entryDir.Equals(FVector2D(1, 0))) {
+		if (all_rooms[e1x].roomColumns[e1y].east == BLOCKED) return false;
+	} else if (entryDir.Equals(FVector2D(-1, 0))) {
+		if (all_rooms[e1x].roomColumns[e1y].west == BLOCKED) return false;
+	} else if (entryDir.Equals(FVector2D(0, 1))) {
+		if (all_rooms[e1x].roomColumns[e1y].south == BLOCKED) return false;
+	} else if (entryDir.Equals(FVector2D(0, -1))) {
+		if (all_rooms[e1x].roomColumns[e1y].north == BLOCKED) return false;
+	}
+
+	int e2x = (int)exit.X + (int)exitDir.X + x;
+	int e2y = (int)exit.Y + (int)exitDir.Y + y;
+	if (e2x < 0 || e2x >= cells_x) return false;
+	if (e2y < 0 || e2y >= cells_y) return false;
+	if (exitDir.Equals(FVector2D(1, 0))) {
+		if (all_rooms[e2x].roomColumns[e2y].east == BLOCKED) return false;
+	}
+	else if (exitDir.Equals(FVector2D(-1, 0))) {
+		if (all_rooms[e2x].roomColumns[e2y].west == BLOCKED) return false;
+	}
+	else if (exitDir.Equals(FVector2D(0, 1))) {
+		if (all_rooms[e2x].roomColumns[e2y].south == BLOCKED) return false;
+	}
+	else if (exitDir.Equals(FVector2D(0, -1))) {
+		if (all_rooms[e2x].roomColumns[e2y].north == BLOCKED) return false;
+	}
+
+	return true;
+}
+
 // helper for testing orientations of room candidates
 void rotateCW(bool& n, bool& e, bool& s, bool& w)
 {

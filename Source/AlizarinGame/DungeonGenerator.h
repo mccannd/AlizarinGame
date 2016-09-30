@@ -4,7 +4,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "Room.h"
+#include "GeneralizedRoom.h"
 #include "DungeonGenerator.generated.h"
 
 
@@ -83,6 +83,11 @@ public:
 	// Generate the entire level, will be called on generation.
 	UFUNCTION(BlueprintCallable, Category = "MazeGenerator")
 		void GenerateMaze(int32 x, int32 y, int32 start_x, int32 start_y);
+
+	bool bigRoomFits(int32 x, int32 y,
+		TArray<FVector2D>& allCells,
+		FVector2D& enter, FVector2D& exit,
+		FVector2D& entryDir, FVector2D& exitDir);
 
 	void GenerateCell(int32 x, int32 y); //recursively cell generation
 
