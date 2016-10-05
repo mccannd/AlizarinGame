@@ -29,7 +29,7 @@ void ABaseWeapon::Tick( float DeltaTime )
 	
 	if (remainingShotDelay < 0) remainingShotDelay = 0;
 
-	if (autoFireOn) FireHold(); //IWeaponInterface::Execute_FireHold(this);
+	//if (autoFireOn) FireHold();
 }
 
 
@@ -74,6 +74,18 @@ void ABaseWeapon::FireHold()
 					FColor::Blue,
 					TEXT("Weapon confirmed collision"));
 			}
+			// Damage is NYI
+		}
+		else {
+			// to be disabled, but shows expected values despite bug!
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+				FString::Printf(TEXT("Missing rotator: (%f, %f, %f) at translation (%f, %f, %f"),
+					validRotation.Roll,
+					validRotation.Yaw,
+					validRotation.Pitch,
+					origin.X,
+					origin.Y,
+					origin.Z));
 		}
 
 		if (beam) {
@@ -102,15 +114,15 @@ void ABaseWeapon::FireHold()
 
 	}
 	else {
-
+		// projectile weapon is NYI
 	}
 
 	remainingShotDelay = shotDelay;
 }
 
-//void ABaseWeapon::FireRelease_Implementation()
+
 void ABaseWeapon::FireRelease()
 {
 	autoFireOn = false;
-	if (!chargeWeapon) return;
+	if (!chargeWeapon) return; // NYI
 }

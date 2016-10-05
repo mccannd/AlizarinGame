@@ -14,7 +14,7 @@ class ALIZARINGAME_API ABaseWeapon : public AActor
 private:
 	// timer until next weapon shot available
 	float remainingShotDelay = 0.0;
-	bool autoFireOn = false;
+	
 	AActor* owningCharacter = NULL;
 public:	
 	// Sets default values for this actor's properties
@@ -25,7 +25,7 @@ public:
 
 	FRotator validRotation = FRotator();
 	UWorld* validWorld;
-
+	bool autoFireOn = false;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	

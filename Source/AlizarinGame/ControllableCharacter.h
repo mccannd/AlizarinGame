@@ -16,7 +16,7 @@ class ALIZARINGAME_API AControllableCharacter : public ABaseCharacter
 private:
 	FVector xMovementVector;
 	FVector yMovementVector;
-
+	UWorld* ValidWorld;
 	bool findMouseRotation(FRotator& rotation);
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Movement")
