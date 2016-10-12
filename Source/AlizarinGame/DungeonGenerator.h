@@ -91,6 +91,21 @@ public:
 
 	void GenerateCell(int32 x, int32 y); //recursively cell generation
 
+	AActor* playerReference = NULL;
+	int playerX;
+	int playerY;
+	int prevPlayerX;
+	int prevPlayerY;
 	
-	
+	//set the player X and Y depending on its location
+	UFUNCTION(BlueprintCallable, Category = "MazeGenerator")
+		void CalcPlayerCell();
+
+	// get coordinates of the cell the player is in
+	UFUNCTION(BlueprintCallable, Category = "MazeGenerator")
+		FVector2D GetPlayerCellLocation();
+
+	// maps a world location to cell coordinates
+	UFUNCTION(BlueprintCallable, Category = "MazeGenerator")
+		FVector2D WorldToCell(FVector location);
 };

@@ -28,3 +28,34 @@ void ARoom::Tick( float DeltaTime )
 
 }
 
+
+void ARoom::activateRoom()
+{
+	if (previouslyActivated) return;
+	else previouslyActivated = true;
+
+	// spawn ze placeholdah
+	UWorld* const World = GetWorld();
+	if (World) {
+		if (spawnEnemyTEMP) {
+			FTransform t = FTransform(GetTransform());
+			t.AddToTranslation(FVector(100, 100, 100));
+			ACharacter* spawnedChar = World->SpawnActor<ACharacter>(spawnEnemyTEMP->GetClass(), t);
+			if (spawnedChar == NULL) {
+				GEngine->AddOnScreenDebugMessage(-1, 5.f,
+					FColor::Blue,
+					TEXT("Spawning Failed"));
+			}
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f,
+				FColor::Blue,
+				TEXT("No character to spawn"));
+		}
+	}
+	else if (GEngine) {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f,
+			FColor::Blue,
+			TEXT("World returned NULL"));
+	}
+}

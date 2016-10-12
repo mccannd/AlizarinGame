@@ -40,4 +40,18 @@ public:
 	// Connects in +X direction?
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Connectivity")
 		bool west = false;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Gameplay")
+		bool previouslyActivated = false;
+
+	// will perform actions such as spawning a character as a player enters
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+		void activateRoom();
+
+	// backup blueprintable option
+	UFUNCTION(BlueprintImplementableEvent, Category = "Gameplay")
+		void activateRoomBP();
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Gameplay")
+		TSubclassOf<ACharacter> spawnEnemyTEMP = NULL;
 };

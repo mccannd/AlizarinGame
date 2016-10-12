@@ -25,6 +25,13 @@ void ADungeonGenerator::BeginPlay()
 	int eastWestCells = FMath::RandRange(5, 10);
 	int startX = FMath::RandRange(2, 4);
 	int startY = FMath::RandRange(2, 4);
+
+	if (GEngine) {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+			FString::Printf(TEXT("OriginCell is %d, %d"),
+				startX,
+				startY));
+	}
 	GenerateMaze(eastWestCells, northSouthCells, startX, startY);
 }
 
@@ -32,7 +39,28 @@ void ADungeonGenerator::BeginPlay()
 void ADungeonGenerator::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
+	if (playerReference == NULL) {
+		playerReference = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	}
 
+	prevPlayerX = playerX;
+	prevPlayerY = playerY;
+	CalcPlayerCell();
+	if (playerX != prevPlayerX || playerY != prevPlayerY) {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+			FString::Printf(TEXT("Player Has Entered Cell %d, %d"),
+				playerX,
+				playerY));
+		ARoom* room = all_rooms[playerX].roomColumns[playerY].cell_room;
+		if (room) {
+			//room->activateRoom();
+			room->activateRoomBP();
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+				TEXT("No room in this cell"));
+		}
+	}
 }
 
 // Initializes the generation of the levels
@@ -62,12 +90,17 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 	GenerateCell(start_x, start_y);
 }
 
+void clockwiseVector(FVector2D& vec)
+{
+	int temp = vec.X;
+	vec.X = -vec.Y;
+	vec.Y = temp;
+}
+
 // helper for testing orientationg of big room candidates
 void rotateBigCW(TArray<FVector2D>& cells) {
 	for (FVector2D cell : cells) {
-		int temp = cell.X;
-		cell.X = -cell.Y;
-		cell.Y = temp;
+		clockwiseVector(cell);
 	}
 }
 
@@ -330,4 +363,24 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 	else if (debuggerOn) {
 		UE_LOG(LogTemp, Warning, TEXT("Cell generation failed"));
 	}
+}
+
+FVector2D ADungeonGenerator::WorldToCell(FVector location)
+{
+	int dx = FMath::Floor((location.X + cell_length / 2.0f) / cell_length);
+	int dy = FMath::Floor((location.Y + cell_length / 2.0f) / cell_length);
+	return FVector2D(origin_x + dx, origin_y + dy);
+}
+
+void ADungeonGenerator::CalcPlayerCell()
+{
+	if (playerReference == NULL) return;
+	FVector2D location = WorldToCell(playerReference->GetActorLocation());
+	playerX = (int)location.X;
+	playerY = (int)location.Y;
+}
+
+FVector2D ADungeonGenerator::GetPlayerCellLocation()
+{
+	return FVector2D(playerX, playerY);
 }
