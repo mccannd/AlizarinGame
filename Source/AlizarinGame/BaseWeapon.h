@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-
+#include "DamageableInterface.h"
 #include "BaseWeapon.generated.h"
 
 UCLASS()

@@ -29,7 +29,7 @@ void ABaseWeapon::Tick( float DeltaTime )
 	
 	if (remainingShotDelay < 0) remainingShotDelay = 0;
 
-	//if (autoFireOn) FireHold();
+	//if (autoFireOn) FireHold(); // DEPRECATED B/C METADATA BUG
 }
 
 
@@ -69,23 +69,15 @@ void ABaseWeapon::FireHold()
 		if (collision.IsValidBlockingHit()) {
 			// need to get damageable interface working first to inflict damage
 			end = collision.ImpactPoint;
-			if (debug) {
-				GEngine->AddOnScreenDebugMessage(-1, 5.f,
-					FColor::Blue,
-					TEXT("Weapon confirmed collision"));
+			
+			if (collision.GetActor()->
+				GetClass()->
+				ImplementsInterface(UDamageableInterface::StaticClass())) {
+				IDamageableInterface::Execute_CalculateDamage(collision.GetActor(), damageTEMP);
 			}
-			// Damage is NYI
 		}
 		else {
-			// to be disabled, but shows expected values despite bug!
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
-				FString::Printf(TEXT("Missing rotator: (%f, %f, %f) at translation (%f, %f, %f"),
-					validRotation.Roll,
-					validRotation.Yaw,
-					validRotation.Pitch,
-					origin.X,
-					origin.Y,
-					origin.Z));
+			
 		}
 
 		if (beam) {

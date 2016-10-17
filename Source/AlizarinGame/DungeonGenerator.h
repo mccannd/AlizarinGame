@@ -55,6 +55,8 @@ private:
 	// distance between centers of each cell in CM
 	float cell_length = 3000.0f;
 
+	ARoom* entryCell = NULL;
+
 public:	
 	// Sets default values for this actor's properties
 	ADungeonGenerator();
@@ -77,6 +79,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
 		TArray< TSubclassOf<ARoom> > Room_4_Doors;
 
+	// will be the 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
+		TSubclassOf < AGeneralizedRoom> StartRoom;
+
 	// As of right now everything will be generated when the level begins
 	// later, it will be expanded to work with an "endless mode"
 
@@ -88,6 +94,11 @@ public:
 		TArray<FVector2D>& allCells,
 		FVector2D& enter, FVector2D& exit,
 		FVector2D& entryDir, FVector2D& exitDir);
+
+	void GenerateBigRoom(int32 x, int32 y,
+		int32& xEnter, int32& yEnter, 
+		int32& xExit, int32& yExit, 
+		bool start = true); //place a generalized room in the scene
 
 	void GenerateCell(int32 x, int32 y); //recursively cell generation
 

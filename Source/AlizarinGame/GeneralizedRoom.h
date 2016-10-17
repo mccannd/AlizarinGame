@@ -47,4 +47,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Connectivity")
 		FVector2D exitAdjacencyDirection;
 
+
+	// backup blueprintable option
+	UFUNCTION(BlueprintImplementableEvent, Category = "Gameplay")
+		void activateRoomBP();
 };
