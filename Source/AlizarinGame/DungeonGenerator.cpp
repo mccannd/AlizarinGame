@@ -55,7 +55,7 @@ void ADungeonGenerator::Tick( float DeltaTime )
 			ARoom* room = all_rooms[playerX].roomColumns[playerY].cell_room;
 			if (room) {
 				//room->activateRoom();
-				//room->activateRoomBP();
+				room->activateRoomBP();
 			}
 		}
 		else {
@@ -98,9 +98,20 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 		FString::Printf(TEXT("Exit at %d, %d"),
 			exitX,
 			exitY));
+
+	int32 objX, objY, objX1, objY1;
+	GenerateBigRoom(origin_x + 2, origin_y + 2, objX, objY, objX1, objY1, false);
+
+
+	GeneratePath(exitX, exitY, objX, objY);
+
 	GenerateCell(entryX, entryY);
 
 	GenerateCell(exitX, exitY);
+
+	GenerateCell(objX, objY);
+
+	GenerateCell(objX1, objY1);
 
 	// Generate recursive paths along all_rooms struct
 	//GenerateCell(start_x, start_y);
@@ -197,7 +208,7 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 	FVector2D exitDir = FVector2D(room->exitAdjacencyDirection);
 
 	// try to scatter near this point
-	for (int tries = 5; tries > 0; tries--) {
+	for (int tries = 8; tries > 0; tries--) {
 		int x1 = x + FMath::RandRange(-2, 2);
 		FMath::Clamp(x1, 0, cells_x - 1);
 		int y1 = y + FMath::RandRange(-2, 2);
@@ -248,8 +259,11 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 				UWorld* const World = GetWorld();
 				if (World) {
 					if (room) {
+						FActorSpawnParameters fasp = FActorSpawnParameters();
+						fasp.bNoCollisionFail = true;
+						
 						AGeneralizedRoom* spawned_room = 
-							World->SpawnActor<AGeneralizedRoom>(room->GetClass(), transform);
+							World->SpawnActor<AGeneralizedRoom>(room->GetClass(), transform, fasp);
 						
 					}
 					else { UE_LOG(LogTemp, Warning, TEXT("Room is nullptr")); }
@@ -309,7 +323,6 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 
 				}
 
-
 				return;
 			}
 
@@ -324,6 +337,177 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 				roomspace[i] = c;
 			}
 		}
+	}
+
+}
+
+// because Unreal does not seem to like multidimensional arrays
+struct RowPath {
+	TArray<TPair<int32, int32>> p;
+};
+
+struct Row2D {
+	TArray<RowPath> row;
+};
+
+// helper for changing and adding better paths
+bool PathConnect(TArray<RowPath>& pq, TArray<Row2D>& ctp, 
+	RowPath& p, int32 x, int32 y) {
+	if (x < 0 || x >= ctp.Num()) return false;
+	if (y < 0 || y >= ctp[0].row.Num()) return false;
+	
+	if (ctp[x].row[y].p.Num() == 0 ||
+		p.p.Num() + 1 < ctp[x].row[y].p.Num()) {
+		// if there is not yet a path here or there is a worse one
+		TArray<TPair<int32, int32>> newpath = TArray<TPair<int32, int32>>(p.p);
+		TPair<int32, int32> newpt = TPair<int32, int32>();
+		newpt.Key = x; newpt.Value = y;
+		newpath.Push(newpt);
+		RowPath np = RowPath();
+		np.p = newpath;
+		pq.Push(np);
+
+		ctp[x].row[y].p = newpath;
+		return true;
+	}
+	return false;
+}
+
+// Do a BFS in order to connect two cells with required doorwaystatus paths
+void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
+{
+	if (x1 == -1 || y1 == -1) {
+		return;
+	}
+
+	// construct a table of paths, same size as dungeon
+	TArray<Row2D> cellsToPaths = TArray<Row2D>();
+	// initialize empty cells
+	for (int i = 0; i < cells_x; i++) {
+		Row2D row = Row2D();
+		for (int j = 0; j < cells_y; j++) {
+			RowPath p = RowPath();
+			p.p = TArray<TPair<int32, int32>>();
+			row.row.Add(p);
+		}
+		cellsToPaths.Add(row);
+	}
+
+	// create a list which will queue next path to trace
+	TArray<RowPath> pathQueue = TArray<RowPath>();
+
+	TArray<TPair<int32, int32>> path = TArray<TPair<int32, int32>>();
+	// starting from (x0, y0)
+	TPair<int32, int32> origin = TPair<int32, int32>();
+	origin.Key = x0;
+	origin.Value = y0;
+	path.Add(origin);
+	
+	cellsToPaths[x0].row[y0].p = path;
+	RowPath rp = RowPath(); rp.p = path; pathQueue.Push(rp);
+	// get next path from the queue
+	while (pathQueue.Num() > 0) {
+		RowPath current = pathQueue.Pop();
+		TPair<int32, int32> currentEnd = current.p.Last();
+
+		RoomCellStruct room;
+
+		// check cells in all directions
+
+		if (currentEnd.Key + 1 >= 0 && currentEnd.Key + 1 < all_rooms.Num()
+			&& currentEnd.Value >= 0 && currentEnd.Value < all_rooms[0].roomColumns.Num()) {
+			
+			room = all_rooms[currentEnd.Key + 1].roomColumns[currentEnd.Value];
+			// if connection is possible
+			if (room.east != BLOCKED) {
+				bool connect = PathConnect(pathQueue, cellsToPaths, current,
+					currentEnd.Key + 1, currentEnd.Value);
+				// if this is the target point (x1, y1), break!
+				//if (currentEnd.Key + 1 == x1 && currentEnd.Value == y1) break;
+			}
+		}
+
+		if (currentEnd.Key - 1 >= 0 && currentEnd.Key - 1 < all_rooms.Num()
+			&& currentEnd.Value >= 0 && currentEnd.Value < all_rooms[0].roomColumns.Num()) {
+
+			room = all_rooms[currentEnd.Key - 1].roomColumns[currentEnd.Value];
+			// if connection is possible
+			if (room.west != BLOCKED) {
+				bool connect = PathConnect(pathQueue, cellsToPaths, current,
+					currentEnd.Key - 1, currentEnd.Value);
+				// if this is the target point (x1, y1), break!
+				//if (currentEnd.Key - 1 == x1 && currentEnd.Value == y1) break;
+			}
+		}
+
+
+		if (currentEnd.Key>= 0 && currentEnd.Key< all_rooms.Num()
+			&& currentEnd.Value + 1 >= 0 && currentEnd.Value + 1 < all_rooms[0].roomColumns.Num()) {
+
+			room = all_rooms[currentEnd.Key].roomColumns[currentEnd.Value + 1];
+			// if connection is possible
+			if (room.south != BLOCKED) {
+				bool connect = PathConnect(pathQueue, cellsToPaths, current,
+					currentEnd.Key, currentEnd.Value + 1);
+				// if this is the target point (x1, y1), break!
+				//if (currentEnd.Key == x1 && currentEnd.Value + 1 == y1) break;
+			}
+		}
+
+		if (currentEnd.Key>= 0 && currentEnd.Key< all_rooms.Num()
+			&& currentEnd.Value - 1 >= 0 && currentEnd.Value - 1 < all_rooms[0].roomColumns.Num()) {
+
+			room = all_rooms[currentEnd.Key].roomColumns[currentEnd.Value - 1];
+			// if connection is possible
+			if (room.north != BLOCKED) {
+				bool connect = PathConnect(pathQueue, cellsToPaths, current,
+					currentEnd.Key, currentEnd.Value - 1);
+				// if this is the target point (x1, y1), break!
+				//if (currentEnd.Key == x1 && currentEnd.Value - 1 == y1) break;
+			}
+
+		}
+	}
+
+	// mark the final path with required doorways
+	TArray<TPair<int32, int32>> finalPath = cellsToPaths[x1].row[y1].p;
+	for (int i = 1; i < finalPath.Num(); i++) {
+		TPair<int32, int32> curr = finalPath[i];
+		TPair<int32, int32> prev = finalPath[i - 1];
+		RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
+		if (prev.Key + 1 == curr.Key) {
+			r.east = REQUIRED;
+		} 
+		else if (prev.Key - 1 == curr.Key) {
+			r.west = REQUIRED;
+		}
+		else if (prev.Value + 1 == curr.Value) {
+			r.south = REQUIRED;
+		}
+		else if (prev.Value - 1 == curr.Value) {
+			r.north = REQUIRED;
+		}
+		GEngine->AddOnScreenDebugMessage(-1, 25.f, FColor::Cyan,
+			FString::Printf(TEXT("Path through: %d, %d"),
+				curr.Key,
+				curr.Value));
+		/*
+		if (testMarker) {
+			FTransform transform = FTransform(FVector((curr.Key - origin_x) * cell_length,
+				(curr.Value - origin_y) * cell_length, 1000));
+			UWorld* const World = GetWorld();
+			if (World) {
+				AActor* m = World->SpawnActor<AActor>(testMarker->GetClass(), transform);
+
+				if (!m) {
+					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan,
+						TEXT("ECH"));
+				}
+			}
+		}
+		*/
+
+		all_rooms[curr.Key].roomColumns[curr.Value] = r;
 	}
 
 }
@@ -498,7 +682,10 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 				UWorld* const World = GetWorld();
 				if (World) {
 					if (room) {
-						ARoom* spawned_room = World->SpawnActor<ARoom>(room->GetClass(), transform);
+
+						FActorSpawnParameters fasp = FActorSpawnParameters();
+						fasp.bNoCollisionFail = true;
+						ARoom* spawned_room = World->SpawnActor<ARoom>(room->GetClass(), transform, fasp);
 						currentCell.cell_room = spawned_room;
 					}
 					else { if (debuggerOn) UE_LOG(LogTemp, Warning, TEXT("Room is nullptr")); }

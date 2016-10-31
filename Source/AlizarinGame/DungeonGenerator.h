@@ -31,10 +31,12 @@ struct RoomCellStruct {
 
 };
 
-// Struct allowing us to make 2D TArrays
+// Structs allowing us to make 2D TArrays
 struct RoomRow {
 	TArray<RoomCellStruct> roomColumns;
 };
+
+
 
 UCLASS()
 class ALIZARINGAME_API ADungeonGenerator : public AActor
@@ -79,9 +81,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
 		TArray< TSubclassOf<ARoom> > Room_4_Doors;
 
-	// will be the 
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
 		TSubclassOf < AGeneralizedRoom> StartRoom;
+
+	// used to mark the paths with something visible for debugging
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+		TSubclassOf < AActor> testMarker;
 
 	// As of right now everything will be generated when the level begins
 	// later, it will be expanded to work with an "endless mode"
@@ -100,7 +106,11 @@ public:
 		int32& xExit, int32& yExit, 
 		bool start = true); //place a generalized room in the scene
 
-	void GenerateCell(int32 x, int32 y); //recursively cell generation
+	// finds a path between cell locations for recursive generation
+	void GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1);
+
+	// recursive cell generation
+	void GenerateCell(int32 x, int32 y); 
 
 	AActor* playerReference = NULL;
 	int playerX;

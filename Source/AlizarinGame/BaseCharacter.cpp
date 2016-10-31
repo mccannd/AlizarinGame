@@ -2,6 +2,8 @@
 #include "AlizarinGame.h"
 #include "BaseCharacter.h"
 
+#include "Blueprint/UserWidget.h"
+
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -51,6 +53,12 @@ void ABaseCharacter::CalculateDamage_Implementation(float damage)
 		if (currentHealth < 0) currentHealth = 0;
 		if (currentHealth < 0.01) isDead = true; // destruction may be in BP
 		percentageHealth = currentHealth / maximumHealth;
+	}
+
+	// implement floating combat text
+	if (wFCT) {
+		APlayerController* c = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+		
 	}
 }
 

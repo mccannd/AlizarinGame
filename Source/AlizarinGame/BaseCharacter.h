@@ -16,6 +16,10 @@ public:
 	// Sets default values for this pawn's properties
 	ABaseCharacter();
 
+	// Reference UMG Asset in the Editor
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+		TSubclassOf<class UUserWidget> wFCT;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
