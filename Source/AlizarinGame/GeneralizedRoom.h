@@ -15,6 +15,25 @@ public:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// whether the room is reachable at all
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+		bool isAccessible = false;
+
+
+	// whether the room's activity is ongoing
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+		bool isObjectiveActive = false;
+
+	// whether the room's activity is complete
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+		bool isObjectiveComplete = false;
+
+
+	// used for interface information / display prompts
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface")
+		int roomID = 0;
+
+
 	/*
 		The cells that this room will occupy based on local coordinates
 		(0m, 0m) in BP local space should be represented as (0, 0) here
@@ -51,4 +70,8 @@ public:
 	// backup blueprintable option
 	UFUNCTION(BlueprintImplementableEvent, Category = "Gameplay")
 		void activateRoomBP();
+
+	// location for interface purposes, GLOBAL location for map pointer
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interface")
+		FVector objectiveLocation = FVector(0, 0, 0);
 };

@@ -14,6 +14,12 @@
 // REQUIRED means there is a doorway here which must be resolved with a connection
 enum DoorwayStatus { BLOCKED, OPEN, REQUIRED };
 
+// Enumeration for picking generalized rooms:
+// START is always the start room and must be placed at origin
+// END is the goal / end room
+// OTHER is the default
+enum ObjectiveType { START, END, OTHER};
+
 // Struct for our generator: the map will consist of an array of these
 struct RoomCellStruct {
 
@@ -81,13 +87,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
 		TArray< TSubclassOf<ARoom> > Room_4_Doors;
 
-	
+	// collection of all rooms with objectives
+	UPROPERTY(Editanywhere, BlueprintReadWrite, Category = "Generator Modules")
+		TArray<TSubclassOf<AGeneralizedRoom>> ObjectiveRooms;
+
+	// the list of objectives, in order
+	TArray<AGeneralizedRoom*> allObjectives;
+	TArray<TPair<int32, int32>> allObjEnter;
+	TArray<TPair<int32, int32>> allObjExit;
+	int currentObjectiveIndex = 0;
+
+	// the next objective that the player needs to complete
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Generator Modules")
+		AGeneralizedRoom* CurrentObjectiveRoom;
+
+	// where the level will start
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
 		TSubclassOf < AGeneralizedRoom> StartRoom;
 
+	// where the level will finish
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generator Modules")
+		TSubclassOf < AGeneralizedRoom> EndRoom;
+
 	// used to mark the paths with something visible for debugging
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		TSubclassOf < AActor> testMarker;
+		TSubclassOf < ARoom> testMarker;
 
 	// As of right now everything will be generated when the level begins
 	// later, it will be expanded to work with an "endless mode"
@@ -101,12 +125,14 @@ public:
 		FVector2D& enter, FVector2D& exit,
 		FVector2D& entryDir, FVector2D& exitDir);
 
-	void GenerateBigRoom(int32 x, int32 y,
+	// place a generalized room in the scene and return a reference, NULL if fail
+	AGeneralizedRoom* GenerateBigRoom(int32 x, int32 y,
 		int32& xEnter, int32& yEnter, 
-		int32& xExit, int32& yExit, 
-		bool start = true); //place a generalized room in the scene
+		int32& xExit, int32& yExit,
+		ObjectiveType type = OTHER); 
 
 	// finds a path between cell locations for recursive generation
+	//UFUNCTION(BlueprintCallable, Category = "MazeGenerator")
 	void GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1);
 
 	// recursive cell generation

@@ -21,10 +21,10 @@ void ADungeonGenerator::BeginPlay()
 
 	// currently uses the naive recursive implementation
 	// later, this will be replaced with the recursive call of each found path
-	int northSouthCells = FMath::RandRange(5, 10);
-	int eastWestCells = FMath::RandRange(5, 10);
-	int startX = FMath::RandRange(2, 4);
-	int startY = FMath::RandRange(2, 4);
+	int northSouthCells = FMath::RandRange(6, 9);
+	int eastWestCells = FMath::RandRange(6, 9);
+	int startX = FMath::RandRange(1, 3);
+	int startY = FMath::RandRange(1, 3);
 
 	if (GEngine) {
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
@@ -43,17 +43,18 @@ void ADungeonGenerator::Tick( float DeltaTime )
 		playerReference = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 	}
 
+	// track player position and activate cells
 	prevPlayerX = playerX;
 	prevPlayerY = playerY;
 	CalcPlayerCell();
 	if (playerX != prevPlayerX || playerY != prevPlayerY) {
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
+		/*GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue,
 			FString::Printf(TEXT("Player Has Entered Cell %d, %d"),
 				playerX,
-				playerY));
+				playerY));*/
 		if (playerX >= 0 && playerX < cells_x && playerY >= 0 && playerY < cells_y) {
 			ARoom* room = all_rooms[playerX].roomColumns[playerY].cell_room;
-			if (room) {
+			if (room != nullptr) {
 				//room->activateRoom();
 				room->activateRoomBP();
 			}
@@ -63,6 +64,17 @@ void ADungeonGenerator::Tick( float DeltaTime )
 				TEXT("No room in this cell"));*/
 		}
 	}
+	// track room completion
+	if (CurrentObjectiveRoom) {
+		if (CurrentObjectiveRoom->isObjectiveComplete) {
+			currentObjectiveIndex++;
+			if (currentObjectiveIndex < allObjectives.Num()) {
+				CurrentObjectiveRoom = allObjectives[currentObjectiveIndex];
+				CurrentObjectiveRoom->isAccessible = true;
+			}
+		}
+	}
+	
 }
 
 // Initializes the generation of the levels
@@ -86,21 +98,81 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 	origin_x = start_x;
 	origin_y = start_y;
 
+	allObjectives = TArray<AGeneralizedRoom*>();
+
 	// TODO: generate objectives and special cells
 	int32 entryX, entryY, exitX, exitY;
-	GenerateBigRoom(origin_x, origin_y, entryX, entryY, exitX, exitY);
-	if (entryX == -1 || entryY == -1) return;
-	GEngine->AddOnScreenDebugMessage(-1, 9.f, FColor::Cyan,
-		FString::Printf(TEXT("Entry at %d, %d"),
-			entryX,
-			entryY));
-	GEngine->AddOnScreenDebugMessage(-1, 9.f, FColor::Cyan,
-		FString::Printf(TEXT("Exit at %d, %d"),
-			exitX,
-			exitY));
+	AGeneralizedRoom* entrance = GenerateBigRoom(origin_x, origin_y, 
+		entryX, entryY, exitX, exitY, START);
+	
+	allObjectives.Add(entrance);
+	TPair<int32, int32> p1 = TPair<int32, int32>();
+	p1.Key = entryX;
+	p1.Value = entryY;
 
+	TPair<int32, int32> p2 = TPair<int32, int32>();
+	p2.Key = exitX;
+	p2.Value = exitY;
+	allObjEnter.Add(TPair<int32, int32>(p1));
+	allObjExit.Add(TPair<int32, int32>(p2));
+
+
+	// generate up to 2 new rooms
+	for (int i = 0; i < 2; i++) {
+		int32 objX, objY, objX1, objY1;
+		AGeneralizedRoom* objective = GenerateBigRoom(origin_x + 2, origin_y + 2, 
+			objX, objY, objX1, objY1);
+
+		if (objective) {
+			p1.Key = objX;
+			p1.Value = objY;
+			p2.Key = objX1;
+			p2.Value = objY1;
+
+			allObjectives.Add(objective);
+			allObjEnter.Add(TPair<int32, int32>(p1));
+			allObjExit.Add(TPair<int32, int32>(p2));
+		}
+	}
+
+
+
+	// generate a valid ending room
+	AGeneralizedRoom* endingRoom = NULL;
+	int32 endX, endY, endX1, endY1;
+	while (endingRoom == NULL) {
+
+		endingRoom = GenerateBigRoom(origin_x + 2, origin_y + 2,
+			endX, endY, endX1, endY1, END);
+	}
+
+	allObjectives.Add(endingRoom);
+	p1.Key = endX;
+	p1.Value = endY;
+	p2.Key = endX1;
+	p2.Value = endY1;
+	allObjEnter.Add(TPair<int32, int32>(p1));
+	allObjExit.Add(TPair<int32, int32>(p2));
+
+
+	// generate every path
+	for (int i = 0; i < allObjEnter.Num() - 1; i++) {
+		GeneratePath(allObjExit[i].Key, allObjExit[i].Value, 
+			allObjEnter[i + 1].Key, allObjEnter[i + 1].Value);
+	}
+
+	// start recursive generation at all points
+	for (int i = 0; i < allObjEnter.Num(); i++) {
+		GenerateCell(allObjEnter[i].Key, allObjEnter[i].Value);
+		GenerateCell(allObjExit[i].Key, allObjExit[i].Value);
+	}
+
+	currentObjectiveIndex = 0;
+	CurrentObjectiveRoom = allObjectives[currentObjectiveIndex];
+	CurrentObjectiveRoom->isAccessible = true;
+	/*
 	int32 objX, objY, objX1, objY1;
-	GenerateBigRoom(origin_x + 2, origin_y + 2, objX, objY, objX1, objY1, false);
+	GenerateBigRoom(origin_x + 2, origin_y + 2, objX, objY, objX1, objY1);
 
 
 	GeneratePath(exitX, exitY, objX, objY);
@@ -112,23 +184,17 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 	GenerateCell(objX, objY);
 
 	GenerateCell(objX1, objY1);
-
+	*/
 	// Generate recursive paths along all_rooms struct
 	//GenerateCell(start_x, start_y);
 }
 
+// helper for simple clockwise rotation, note that +x in unreal is reverse of usual +x
 void clockwiseVector(FVector2D& vec)
 {
 	int temp = vec.X;
 	vec.X = -vec.Y;
 	vec.Y = temp;
-}
-
-// helper for testing orientationg of big room candidates
-void rotateBigCW(TArray<FVector2D>& cells) {
-	for (FVector2D cell : cells) {
-		clockwiseVector(cell);
-	}
 }
 
 // check if a big room fits at its current rotation at X and y
@@ -139,17 +205,66 @@ bool ADungeonGenerator::bigRoomFits(int32 x, int32 y,
 {
 	// check if any rooms are out of bounds
 	// check if any rooms inside have been initialized
+	// check if any adjacent cells are expecting a doorway
 	for (FVector2D room : allCells) {
-		int testX = (int)room.X + x;
-		int testY = (int)room.Y + y;
+		int testX = FPlatformMath::RoundToInt(room.X) + x;
+		int testY = FPlatformMath::RoundToInt(room.Y) + y;
 		if (testX < 0 || testX >= cells_x) return false; // OOB
 		if (testY < 0 || testY >= cells_y) return false; // OOB
 		if (all_rooms[testX].roomColumns[testY].initialized) return false;
+
+		bool isDoorway = room.Equals(enter);
+
+		// possibly the ugliest code ever written by mortal hands
+		if (testX + 1 < cells_x) {
+			if (all_rooms[testX + 1].roomColumns[testY].east == REQUIRED) {
+				if (isDoorway) {
+					if (!FVector2D(testX + 1, testY).Equals(FVector2D(testX, testY) + entryDir)) return false;
+				} else return false;
+			}
+		}
+
+		if (testX - 1 >= 0) {
+			if (all_rooms[testX - 1].roomColumns[testY].west == REQUIRED) {
+				if (isDoorway) {
+					if (!FVector2D(testX - 1, testY).Equals(FVector2D(testX, testY) + entryDir)) return false;
+				}
+				else return false;
+			}
+		}
+
+		if (testY + 1 < cells_y) {
+			if (all_rooms[testX].roomColumns[testY + 1].south == REQUIRED) {
+				if (isDoorway) {
+					if (!FVector2D(testX, testY + 1).Equals(FVector2D(testX, testY) + entryDir)) return false;
+				}
+				else return false;
+			}
+		}
+
+		if (testY - 1 >= 0) {
+			if (all_rooms[testX].roomColumns[testY - 1].north == REQUIRED) {
+				if (isDoorway) {
+					if (!FVector2D(testX, testY - 1).Equals(FVector2D(testX, testY) + entryDir)) return false;
+				}
+				else return false;
+			}
+		}
+
+		for (int i = 0; i < allObjEnter.Num(); i++) {
+			TPair<int, int> a = allObjEnter[i];
+			TPair<int, int> b = allObjExit[i];
+
+			if (testX == a.Key || testX == b.Key) return false;
+			if (testY == a.Value || testY == b.Value) return false;
+		}
+
+
 	}
 	// check if doorways lead to blocked areas
 	// or are out of bounds
-	int e1x = (int)enter.X + (int)entryDir.X + x;
-	int e1y = (int)enter.Y + (int)entryDir.Y + y;
+	int e1x = FPlatformMath::RoundToInt(enter.X) + FPlatformMath::RoundToInt(entryDir.X) + x;
+	int e1y = FPlatformMath::RoundToInt(enter.Y) + FPlatformMath::RoundToInt(entryDir.Y) + y;
 	if (e1x < 0 || e1x >= cells_x) return false;
 	if (e1y < 0 || e1y >= cells_y) return false;
 	if (entryDir.Equals(FVector2D(1, 0))) {
@@ -162,8 +277,8 @@ bool ADungeonGenerator::bigRoomFits(int32 x, int32 y,
 		if (all_rooms[e1x].roomColumns[e1y].north == BLOCKED) return false;
 	}
 
-	int e2x = (int)exit.X + (int)exitDir.X + x;
-	int e2y = (int)exit.Y + (int)exitDir.Y + y;
+	int e2x = FPlatformMath::RoundToInt(exit.X) + FPlatformMath::RoundToInt(exitDir.X) + x;
+	int e2y = FPlatformMath::RoundToInt(exit.Y) + FPlatformMath::RoundToInt(exitDir.Y) + y;
 	if (e2x < 0 || e2x >= cells_x) return false;
 	if (e2y < 0 || e2y >= cells_y) return false;
 	if (exitDir.Equals(FVector2D(1, 0))) {
@@ -183,8 +298,9 @@ bool ADungeonGenerator::bigRoomFits(int32 x, int32 y,
 }
 
 // reference parameters used for future spawning
-void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
-	int32& xEnter, int32& yEnter, int32& xExit, int32& yExit, bool start)
+AGeneralizedRoom* ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
+	int32& xEnter, int32& yEnter, int32& xExit, int32& yExit, 
+	ObjectiveType type)
 {
 	xEnter = -1;
 	yEnter = -1;
@@ -192,13 +308,24 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 	yExit = -1;
 
 	AGeneralizedRoom* room;
-	if (start) {
+	if (type == START) {
 		room = StartRoom->GetDefaultObject<AGeneralizedRoom>();
+	}
+	else if (type == END) {
+		room = EndRoom->GetDefaultObject<AGeneralizedRoom>();
 	}
 	else {
-		// NYI, will later randomly pick bigger rooms
-		room = StartRoom->GetDefaultObject<AGeneralizedRoom>();
+		if (ObjectiveRooms.Num() == 0) {
+			room = StartRoom->GetDefaultObject<AGeneralizedRoom>();
+		}
+		else {
+			room = ObjectiveRooms[FMath::RandRange(0, 
+				ObjectiveRooms.Num() - 1)]->GetDefaultObject<AGeneralizedRoom>();
+		}
+		
 	}
+
+	AGeneralizedRoom* spawned_room = NULL;
 
 	// copy all properties for placement
 	TArray<FVector2D> roomspace = TArray<FVector2D>(room->occupiedCells);
@@ -214,10 +341,12 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 		int y1 = y + FMath::RandRange(-2, 2);
 		FMath::Clamp(y1, 0, cells_y - 1);
 
-		if (start) x1 = x;
-		if (start) y1 = y;
+		if (type == START) x1 = x;
+		if (type == START) y1 = y;
 
-		int startRotations = FMath::RandRange(0, 3);
+		int startRotations = 0;
+		/*
+		//int startRotations = FMath::RandRange(0, 3);
 		for (int i = 0; i < startRotations; i++) {
 			clockwiseVector(enter);
 			clockwiseVector(exit);
@@ -228,9 +357,8 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 				clockwiseVector(c);
 				roomspace[i] = c;
 			}
-
-			
-		}
+		
+		}*/
 
 		// try all rotations in this location
 		for (int rotations = 0; rotations < 4; rotations++) {
@@ -256,14 +384,13 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 						rotations + startRotations));
 
 				// spawn the room in this position
+				
 				UWorld* const World = GetWorld();
 				if (World) {
 					if (room) {
-						FActorSpawnParameters fasp = FActorSpawnParameters();
-						fasp.bNoCollisionFail = true;
-						
-						AGeneralizedRoom* spawned_room = 
-							World->SpawnActor<AGeneralizedRoom>(room->GetClass(), transform, fasp);
+
+						spawned_room = 
+							World->SpawnActor<AGeneralizedRoom>(room->GetClass(), transform);
 						
 					}
 					else { UE_LOG(LogTemp, Warning, TEXT("Room is nullptr")); }
@@ -271,15 +398,16 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 				else { UE_LOG(LogTemp, Warning, TEXT("World is nullptr")); }
 
 				// mark and prepare the grid cells
-				for (FVector2D cell : roomspace) {
-					int currentX = (int)cell.X + x1;
-					int currentY = (int)cell.Y + y1;
+				for (int i = 0; i < roomspace.Num(); i++)  {
+					FVector2D cell = roomspace[i];
+					int currentX = FGenericPlatformMath::RoundToInt(cell.X) + x1;
+					int currentY = FGenericPlatformMath::RoundToInt(cell.Y) + y1;
 
-					GEngine->AddOnScreenDebugMessage(-1, 9.f, FColor::Green,
+					GEngine->AddOnScreenDebugMessage(-1, 500.f, FColor::Green,
 						FString::Printf(TEXT("Mark cell %d %d"),
-							(int) cell.X, (int) cell.Y));
+							(int) currentX, (int) currentY));
 
-					all_rooms[currentX].roomColumns[currentY].cell_room = room;
+					all_rooms[currentX].roomColumns[currentY].cell_room = spawned_room;
 					all_rooms[currentX].roomColumns[currentY].initialized = true;
 
 					all_rooms[currentX].roomColumns[currentY].north = BLOCKED;
@@ -301,8 +429,8 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 							all_rooms[currentX].roomColumns[currentY].south = REQUIRED;
 						}
 
-						xEnter = currentX + (int) enterDir.X;
-						yEnter = currentY + (int) enterDir.Y;
+						xEnter = x1 + FGenericPlatformMath::RoundToInt(cell.X + enterDir.X);
+						yEnter = y1 + FGenericPlatformMath::RoundToInt(cell.Y + enterDir.Y);
 					}
 					if (cell.Equals(exit)) {
 						if (exitDir.Equals(FVector2D(1, 0))) {
@@ -317,13 +445,13 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 						else {
 							all_rooms[currentX].roomColumns[currentY].south = REQUIRED;
 						}
-						xExit = currentX + (int)exitDir.X;
-						yExit = currentY + (int)exitDir.Y;
+						xExit = x1 + FGenericPlatformMath::RoundToInt(cell.X + exitDir.X);
+						yExit = y1 + FGenericPlatformMath::RoundToInt(cell.Y + exitDir.Y);
 					}
 
 				}
-
-				return;
+				// return a reference to the room
+				return spawned_room;
 			}
 
 			// if failed, next rotation
@@ -338,7 +466,7 @@ void ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 			}
 		}
 	}
-
+	return NULL; // failed to spawn a room
 }
 
 // because Unreal does not seem to like multidimensional arrays
@@ -351,6 +479,15 @@ struct Row2D {
 };
 
 // helper for changing and adding better paths
+/* Inputs: 
+pq is a queue of paths.
+ctp is cells-to-paths, which contains the best path from some cell to all others
+p is the current path we are looking at
+x and y are the cell coordinates we are examining
+
+Outputs:
+returns true if p is inserted to ctp[x][y], false otherwise
+*/
 bool PathConnect(TArray<RowPath>& pq, TArray<Row2D>& ctp, 
 	RowPath& p, int32 x, int32 y) {
 	if (x < 0 || x >= ctp.Num()) return false;
@@ -373,7 +510,13 @@ bool PathConnect(TArray<RowPath>& pq, TArray<Row2D>& ctp,
 	return false;
 }
 
-// Do a BFS in order to connect two cells with required doorwaystatus paths
+/*
+Do a BFS in order to connect two cells with required doorwaystatus paths
+
+Inputs: x0, y0 are start coordinates. x1, y1 are end coordinates.
+
+Outputs: void. will get path that reaches x1, y1 and mark cells appropriately
+*/
 void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 {
 	if (x1 == -1 || y1 == -1) {
@@ -419,11 +562,9 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 			
 			room = all_rooms[currentEnd.Key + 1].roomColumns[currentEnd.Value];
 			// if connection is possible
-			if (room.east != BLOCKED) {
+			if (room.east != BLOCKED  && !room.initialized) {
 				bool connect = PathConnect(pathQueue, cellsToPaths, current,
 					currentEnd.Key + 1, currentEnd.Value);
-				// if this is the target point (x1, y1), break!
-				//if (currentEnd.Key + 1 == x1 && currentEnd.Value == y1) break;
 			}
 		}
 
@@ -432,11 +573,9 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 
 			room = all_rooms[currentEnd.Key - 1].roomColumns[currentEnd.Value];
 			// if connection is possible
-			if (room.west != BLOCKED) {
+			if (room.west != BLOCKED && !room.initialized) {
 				bool connect = PathConnect(pathQueue, cellsToPaths, current,
 					currentEnd.Key - 1, currentEnd.Value);
-				// if this is the target point (x1, y1), break!
-				//if (currentEnd.Key - 1 == x1 && currentEnd.Value == y1) break;
 			}
 		}
 
@@ -446,11 +585,9 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 
 			room = all_rooms[currentEnd.Key].roomColumns[currentEnd.Value + 1];
 			// if connection is possible
-			if (room.south != BLOCKED) {
+			if (room.south != BLOCKED && !room.initialized) {
 				bool connect = PathConnect(pathQueue, cellsToPaths, current,
 					currentEnd.Key, currentEnd.Value + 1);
-				// if this is the target point (x1, y1), break!
-				//if (currentEnd.Key == x1 && currentEnd.Value + 1 == y1) break;
 			}
 		}
 
@@ -459,11 +596,9 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 
 			room = all_rooms[currentEnd.Key].roomColumns[currentEnd.Value - 1];
 			// if connection is possible
-			if (room.north != BLOCKED) {
+			if (room.north != BLOCKED && !room.initialized) {
 				bool connect = PathConnect(pathQueue, cellsToPaths, current,
 					currentEnd.Key, currentEnd.Value - 1);
-				// if this is the target point (x1, y1), break!
-				//if (currentEnd.Key == x1 && currentEnd.Value - 1 == y1) break;
 			}
 
 		}
@@ -471,33 +606,60 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 
 	// mark the final path with required doorways
 	TArray<TPair<int32, int32>> finalPath = cellsToPaths[x1].row[y1].p;
-	for (int i = 1; i < finalPath.Num(); i++) {
+	for (int i = 0; i < finalPath.Num(); i++) {
 		TPair<int32, int32> curr = finalPath[i];
-		TPair<int32, int32> prev = finalPath[i - 1];
-		RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
-		if (prev.Key + 1 == curr.Key) {
-			r.east = REQUIRED;
-		} 
-		else if (prev.Key - 1 == curr.Key) {
-			r.west = REQUIRED;
+
+		if (i > 0) {
+			TPair<int32, int32> prev = finalPath[i - 1];
+			RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
+			if (prev.Key + 1 == curr.Key) {
+				r.east = REQUIRED;
+			}
+			else if (prev.Key - 1 == curr.Key) {
+				r.west = REQUIRED;
+			}
+			else if (prev.Value + 1 == curr.Value) {
+				r.south = REQUIRED;
+			}
+			else if (prev.Value - 1 == curr.Value) {
+				r.north = REQUIRED;
+			}
+
+
+			all_rooms[curr.Key].roomColumns[curr.Value] = r;
 		}
-		else if (prev.Value + 1 == curr.Value) {
-			r.south = REQUIRED;
+
+		if (i < finalPath.Num() - 1) {
+			TPair<int32, int32> next = finalPath[i + 1];
+			RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
+			if (next.Key == curr.Key + 1) {
+				r.east = REQUIRED;
+			}
+			else if (next.Key == curr.Key - 1) {
+				r.west = REQUIRED;
+			}
+			else if (next.Value == curr.Value - 1) {
+				r.south = REQUIRED;
+			}
+			else if (next.Value == curr.Value + 1) {
+				r.north = REQUIRED;
+			}
+
+
+			all_rooms[curr.Key].roomColumns[curr.Value] = r;
 		}
-		else if (prev.Value - 1 == curr.Value) {
-			r.north = REQUIRED;
-		}
-		GEngine->AddOnScreenDebugMessage(-1, 25.f, FColor::Cyan,
+		/*GEngine->AddOnScreenDebugMessage(-1, 25.f, FColor::Cyan,
 			FString::Printf(TEXT("Path through: %d, %d"),
 				curr.Key,
-				curr.Value));
-		/*
+				curr.Value));*/
+		
+		// debugging which will trace path
 		if (testMarker) {
 			FTransform transform = FTransform(FVector((curr.Key - origin_x) * cell_length,
-				(curr.Value - origin_y) * cell_length, 1000));
+				(curr.Value - origin_y) * cell_length, 500));
 			UWorld* const World = GetWorld();
 			if (World) {
-				AActor* m = World->SpawnActor<AActor>(testMarker->GetClass(), transform);
+				ARoom* m = World->SpawnActor<ARoom>(testMarker->GetDefaultObject()->GetClass(), transform);
 
 				if (!m) {
 					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan,
@@ -505,9 +667,9 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 				}
 			}
 		}
-		*/
+		
 
-		all_rooms[curr.Key].roomColumns[curr.Value] = r;
+		
 	}
 
 }
@@ -682,10 +844,7 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 				UWorld* const World = GetWorld();
 				if (World) {
 					if (room) {
-
-						FActorSpawnParameters fasp = FActorSpawnParameters();
-						fasp.bNoCollisionFail = true;
-						ARoom* spawned_room = World->SpawnActor<ARoom>(room->GetClass(), transform, fasp);
+						ARoom* spawned_room = World->SpawnActor<ARoom>(room->GetClass(), transform);
 						currentCell.cell_room = spawned_room;
 					}
 					else { if (debuggerOn) UE_LOG(LogTemp, Warning, TEXT("Room is nullptr")); }
@@ -729,8 +888,8 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 
 FVector2D ADungeonGenerator::WorldToCell(FVector location)
 {
-	int dx = FMath::Floor((location.X + cell_length / 2.0f) / cell_length);
-	int dy = FMath::Floor((location.Y + cell_length / 2.0f) / cell_length);
+	int dx = FGenericPlatformMath::Floor((location.X + cell_length / 2.0f) / cell_length);
+	int dy = FGenericPlatformMath::Floor((location.Y + cell_length / 2.0f) / cell_length);
 	return FVector2D(origin_x + dx, origin_y + dy);
 }
 
