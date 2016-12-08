@@ -65,6 +65,16 @@ private:
 
 	ARoom* entryCell = NULL;
 
+	// the number of cells currently generated
+	int32 occupiedCells = 0;
+	// the average number of doorways
+	float avgDegree = 0;
+	// the number of cells that will be along a path, ie min of graph
+	// note that these must have degree of at least 2
+	int32 minNumCells = 0;
+
+	int32 projectedNumCells = 0;
+
 public:	
 	// Sets default values for this actor's properties
 	ADungeonGenerator();
@@ -90,6 +100,10 @@ public:
 	// collection of all rooms with objectives
 	UPROPERTY(Editanywhere, BlueprintReadWrite, Category = "Generator Modules")
 		TArray<TSubclassOf<AGeneralizedRoom>> ObjectiveRooms;
+
+	// target average degree of the level / graph, higher means more branches
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation Settings")
+		float targetDensity = 2.5;
 
 	// the list of objectives, in order
 	TArray<AGeneralizedRoom*> allObjectives;

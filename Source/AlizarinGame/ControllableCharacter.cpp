@@ -127,6 +127,8 @@ void AControllableCharacter::Tick(float DeltaSeconds)
 	bool foundTarget = findMouseRotation(target);
 	if (foundTarget) {
 		SetActorRotation(FMath::RInterpTo(current, target, DeltaSeconds, 90.0));
+
+		currRot = FMath::RInterpTo(current, target, DeltaSeconds, 90.0);
 	}
 
 	if (activeWeapon) {

@@ -117,8 +117,8 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 	allObjExit.Add(TPair<int32, int32>(p2));
 
 
-	// generate up to 2 new rooms
-	for (int i = 0; i < 2; i++) {
+	// generate up to 3 new rooms
+	for (int i = 0; i < 3; i++) {
 		int32 objX, objY, objX1, objY1;
 		AGeneralizedRoom* objective = GenerateBigRoom(origin_x + 2, origin_y + 2, 
 			objX, objY, objX1, objY1);
@@ -403,9 +403,9 @@ AGeneralizedRoom* ADungeonGenerator::GenerateBigRoom(int32 x, int32 y,
 					int currentX = FGenericPlatformMath::RoundToInt(cell.X) + x1;
 					int currentY = FGenericPlatformMath::RoundToInt(cell.Y) + y1;
 
-					GEngine->AddOnScreenDebugMessage(-1, 500.f, FColor::Green,
+					/*GEngine->AddOnScreenDebugMessage(-1, 500.f, FColor::Green,
 						FString::Printf(TEXT("Mark cell %d %d"),
-							(int) currentX, (int) currentY));
+							(int) currentX, (int) currentY));*/
 
 					all_rooms[currentX].roomColumns[currentY].cell_room = spawned_room;
 					all_rooms[currentX].roomColumns[currentY].initialized = true;
@@ -647,27 +647,11 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 
 
 			all_rooms[curr.Key].roomColumns[curr.Value] = r;
-		}
-		/*GEngine->AddOnScreenDebugMessage(-1, 25.f, FColor::Cyan,
-			FString::Printf(TEXT("Path through: %d, %d"),
-				curr.Key,
-				curr.Value));*/
-		
-		// debugging which will trace path
-		if (testMarker) {
-			FTransform transform = FTransform(FVector((curr.Key - origin_x) * cell_length,
-				(curr.Value - origin_y) * cell_length, 500));
-			UWorld* const World = GetWorld();
-			if (World) {
-				ARoom* m = World->SpawnActor<ARoom>(testMarker->GetDefaultObject()->GetClass(), transform);
 
-				if (!m) {
-					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Cyan,
-						TEXT("ECH"));
-				}
-			}
+
+			minNumCells++;
 		}
-		
+
 
 		
 	}
@@ -863,6 +847,13 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 
 				// should prob use refs
 				all_rooms[x].roomColumns[y] = currentCell;
+
+
+				// add to running sum of occupied cells
+				occupiedCells++;
+				avgDegree *= (occupiedCells - 1) / (float)occupiedCells;
+				avgDegree += num_doorways / (float)occupiedCells;
+
 
 				break;
 			}

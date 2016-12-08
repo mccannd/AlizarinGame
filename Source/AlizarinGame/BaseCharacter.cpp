@@ -2,7 +2,6 @@
 #include "AlizarinGame.h"
 #include "BaseCharacter.h"
 
-#include "Blueprint/UserWidget.h"
 
 
 // Sets default values
@@ -37,6 +36,8 @@ void ABaseCharacter::CalculateDamage_Implementation(float damage)
 {
 	if (isDead) return; // stop, stop! it's already dead!
 
+	if (FGenericPlatformMath::Abs(damage) < 0.001) return;
+
 	// must have some sort of viable damage to prevent shield regeneration
 	if (damage > 0.01) shieldRechargeDelayRemaining = shieldRechargeDelay;
 
@@ -51,15 +52,31 @@ void ABaseCharacter::CalculateDamage_Implementation(float damage)
 	else {
 		currentHealth -= damage;
 		if (currentHealth < 0) currentHealth = 0;
-		if (currentHealth < 0.01) isDead = true; // destruction may be in BP
+		if (currentHealth < 0.01) isDead = true; 
 		percentageHealth = currentHealth / maximumHealth;
 	}
 
 	// implement floating combat text
-	if (wFCT) {
-		APlayerController* c = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		
+	if (FCT) {
+		UWorld* const World = GetWorld();
+		if (World) {
+			FTransform t = FTransform(GetActorLocation());
+			
+			ACombatTextActor* text = World->
+				SpawnActor<ACombatTextActor>(FCT->GetDefaultObject()->GetClass(), t);
+
+			if (text) {
+				text->setFCTSubject(this);
+				text->setFCTContent(FString::FromInt(FGenericPlatformMath::Round(damage)));
+			}
+
+		}
 	}
+	
+
+	if (isDead) loseLife();
+
+	
 }
 
 void ABaseCharacter::TickDamage_Implementation(float deltaSeconds) 
@@ -88,4 +105,29 @@ void ABaseCharacter::TickDamage_Implementation(float deltaSeconds)
 	if (currentShield > maximumShield) currentShield = maximumShield;
 	if (currentShield < 0.01) currentShield = 0;
 
+}
+
+// Called when a life is lost. Can be overwritten by a blueprint for specific characters
+void ABaseCharacter::loseLife_Implementation()
+{
+	if (!isDead) return;
+	
+	if (remainingLives <= 0) {
+		// No more lives, destroy the object after the end of the tick
+
+		// could use an animation or particle effect option, NYI
+		Destroy();
+	}
+	else {
+		// reset the life of this character
+
+		// probably need some other sort of indicator here
+		remainingLives--;
+		isDead = false;
+
+		currentShield = maximumShield;
+		percentageShield = 1;
+		currentHealth = maximumHealth;
+		percentageHealth = 1;
+	}
 }

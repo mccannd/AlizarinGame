@@ -22,6 +22,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Movement")
 		float moveSpeed = 1;
 
+	// rotation variable for debug purposes
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Movement")
+		FRotator currRot;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	

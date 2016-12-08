@@ -5,6 +5,7 @@
 
 #include "GameFramework/Character.h"
 #include "DamageableInterface.h"
+#include "CombatTextActor.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
@@ -16,9 +17,6 @@ public:
 	// Sets default values for this pawn's properties
 	ABaseCharacter();
 
-	// Reference UMG Asset in the Editor
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-		TSubclassOf<class UUserWidget> wFCT;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -39,8 +37,17 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Health")
 		float percentageHealth = 1;
 
+	// flag for losing all health
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Health")
 		bool isDead = false;
+
+	// number of times health can be reduced to zero before being destroyed
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Health")
+		int remainingLives = 0;
+
+	// called whenever something loses a life
+	UFUNCTION(BlueprintNativeEvent, Category = "Health")
+		void loseLife();
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Health")
 		float healthRegeneration = 0; // health per second
@@ -78,4 +85,7 @@ public:
 	
 	virtual void TickDamage_Implementation(float deltaSeconds) override;
 
+	// the type of floating combat text used for this character
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "UI")
+		TSubclassOf<ACombatTextActor> FCT;
 };
