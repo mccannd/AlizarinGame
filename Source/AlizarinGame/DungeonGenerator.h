@@ -69,6 +69,8 @@ private:
 	int32 occupiedCells = 0;
 	// the average number of doorways
 	float avgDegree = 0;
+
+	float totalDegree = 0;
 	// the number of cells that will be along a path, ie min of graph
 	// note that these must have degree of at least 2
 	int32 minNumCells = 0;
@@ -104,6 +106,11 @@ public:
 	// target average degree of the level / graph, higher means more branches
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation Settings")
 		float targetDensity = 2.5;
+
+	// chance that the degree will change to better match target density
+	// should be clamped between 0 and 1. >= 1 is "always" and <= 0 is "never"
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation Settings")
+		float conformity = 0.5;
 
 	// the list of objectives, in order
 	TArray<AGeneralizedRoom*> allObjectives;

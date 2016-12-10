@@ -608,10 +608,10 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 	TArray<TPair<int32, int32>> finalPath = cellsToPaths[x1].row[y1].p;
 	for (int i = 0; i < finalPath.Num(); i++) {
 		TPair<int32, int32> curr = finalPath[i];
+		RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
 
 		if (i > 0) {
 			TPair<int32, int32> prev = finalPath[i - 1];
-			RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
 			if (prev.Key + 1 == curr.Key) {
 				r.east = REQUIRED;
 			}
@@ -623,20 +623,16 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 			}
 			else if (prev.Value - 1 == curr.Value) {
 				r.north = REQUIRED;
-			}
-
-
-			all_rooms[curr.Key].roomColumns[curr.Value] = r;
+			}			
 		}
 
 		if (i < finalPath.Num() - 1) {
 			TPair<int32, int32> next = finalPath[i + 1];
-			RoomCellStruct r = all_rooms[curr.Key].roomColumns[curr.Value];
 			if (next.Key == curr.Key + 1) {
-				r.east = REQUIRED;
+				r.west = REQUIRED;
 			}
 			else if (next.Key == curr.Key - 1) {
-				r.west = REQUIRED;
+				r.east = REQUIRED;
 			}
 			else if (next.Value == curr.Value - 1) {
 				r.south = REQUIRED;
@@ -644,16 +640,27 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 			else if (next.Value == curr.Value + 1) {
 				r.north = REQUIRED;
 			}
-
-
-			all_rooms[curr.Key].roomColumns[curr.Value] = r;
-
-
-			minNumCells++;
+		
 		}
 
 
-		
+		if (r.north != REQUIRED) r.north = OPEN;
+		if (r.east != REQUIRED) r.east = OPEN;
+		if (r.south != REQUIRED) r.south = OPEN;
+		if (r.west != REQUIRED) r.west = OPEN;
+		all_rooms[curr.Key].roomColumns[curr.Value] = r;
+
+		if (testMarker) {
+			UWorld* const World = GetWorld();
+			if (World) {
+				FVector location = FVector((curr.Key - origin_x) * cell_length,
+					(curr.Value - origin_y) * cell_length, 1100);
+				FTransform t = FTransform(location);
+					ARoom* m = World->SpawnActor<ARoom>(testMarker->GetDefaultObject()->GetClass(), t);
+			}
+		}
+
+		minNumCells++;
 	}
 
 }
@@ -734,8 +741,41 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 	if (adj_e == DoorwayStatus::BLOCKED) max--;
 	if (adj_w == DoorwayStatus::BLOCKED) max--;
 
+
+	// pick the number of doorways based on random range and density controls
+	if (min == 0) min++;
 	int num_doorways = FMath::RandRange(min, max);
-	if (num_doorways == 0) num_doorways++;
+	
+
+	
+	float tempAvg = (num_doorways + totalDegree) / (occupiedCells + 1);
+	float deltaAvg = tempAvg - avgDegree;
+	// if there would be a negative contribution, and the density is too low
+	if (deltaAvg < 0 && avgDegree < targetDensity) {
+		// chance to bump up degree to max
+		if (FMath::FRandRange(0.0f, 0.99f) < conformity) {
+			num_doorways = max;
+			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+				TEXT("Increased Doorways to Max"));
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+				TEXT("Did not set to Max"));
+		}
+	}
+	else if (deltaAvg > 0 && avgDegree > targetDensity){
+		//if there would be positive contribution and the density is too high
+		if (FMath::FRandRange(0.0f, 0.99f) < conformity) {
+			num_doorways = min;
+			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+				TEXT("Truncated Doorways to Min"));
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+				TEXT("Did not set to Min"));
+		}
+	}
+
 
 	// to be removed later
 	bool debuggerOn = false;
@@ -845,15 +885,13 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 				if (w) currentCell.west = DoorwayStatus::REQUIRED;
 				else currentCell.west = DoorwayStatus::BLOCKED;
 
-				// should prob use refs
 				all_rooms[x].roomColumns[y] = currentCell;
-
 
 				// add to running sum of occupied cells
 				occupiedCells++;
-				avgDegree *= (occupiedCells - 1) / (float)occupiedCells;
-				avgDegree += num_doorways / (float)occupiedCells;
-
+				totalDegree += num_doorways;
+				avgDegree = totalDegree / occupiedCells;
+				if (num_doorways > 2) projectedNumCells += num_doorways - 2;
 
 				break;
 			}
