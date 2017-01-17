@@ -79,6 +79,9 @@ public:
 		float plainDamageRate = 0; // generic damage over time
 
 	
+	UFUNCTION(BlueprintCallable, Category = "Damage")
+		void restoreHealth();
+
 	// implementation of interface requires odd _Implementation syntax
 	// Unreal Macromagics, UFUNCTION shenanigans handled in DamageableInterface
 	virtual void CalculateDamage_Implementation(float damage) override;

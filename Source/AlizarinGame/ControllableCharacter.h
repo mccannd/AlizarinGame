@@ -59,6 +59,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Equipment")
 		void EquipWeapon(ABaseWeapon* toEquip);
 
+	
 	/// player inputs
 
 	// movement inputs

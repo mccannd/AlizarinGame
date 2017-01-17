@@ -26,12 +26,22 @@ struct RoomCellStruct {
 	RoomCellStruct() {}
 
 	// All doorway boundaries are open on initialization
+	// positive Y
 	DoorwayStatus north = OPEN;
+	// negative Y
 	DoorwayStatus south = OPEN;
+	// negative X (unintuitive, but this is how Unreal does it)
 	DoorwayStatus east = OPEN;
+	// positive X
 	DoorwayStatus west = OPEN;
 
-	bool initialized = false; // whether the maze has finished its work on this cell
+	// whether the generator has finished its work on this cell
+	bool initialized = false; 
+	// whether this cell was marked by the pathfinder
+	bool requiredPath = false;
+	// if this cell is in a required path, which number path is it?
+	int32 pathKey = 0;
+
 
 	ARoom* cell_room; // reference to room spawned inside this cell
 
@@ -69,13 +79,21 @@ private:
 	int32 occupiedCells = 0;
 	// the average number of doorways
 	float avgDegree = 0;
-
+	// the total number of doorways (vertex degree)
 	float totalDegree = 0;
 	// the number of cells that will be along a path, ie min of graph
 	// note that these must have degree of at least 2
 	int32 minNumCells = 0;
-
+	// a running total of the minimum number of cells the level will have
 	int32 projectedNumCells = 0;
+
+	// number of paths that the recursive generator has traced
+	int32 pathsFinished = 0;
+	// number of paths that had to be found
+	int32 totalPaths = 0;
+
+	// whether recursive generation along a path has ran into a later one
+	bool reachedSubsequentPath = false;
 
 public:	
 	// Sets default values for this actor's properties
@@ -105,12 +123,18 @@ public:
 
 	// target average degree of the level / graph, higher means more branches
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation Settings")
-		float targetDensity = 2.5;
+		float targetDensity = 2.35;
 
 	// chance that the degree will change to better match target density
 	// should be clamped between 0 and 1. >= 1 is "always" and <= 0 is "never"
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation Settings")
 		float conformity = 0.5;
+
+	// the maximum ratio of (all cells) / (required cells)
+	// if the projected number of cells exceeds softLimitCellRatio * minNumCells,
+	// then minimize any remaining vertex degrees
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation Settings")
+		float softLimitCellRatio = 2.3;
 
 	// the list of objectives, in order
 	TArray<AGeneralizedRoom*> allObjectives;

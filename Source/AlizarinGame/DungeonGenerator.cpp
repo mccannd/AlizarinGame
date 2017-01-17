@@ -159,34 +159,23 @@ void ADungeonGenerator::GenerateMaze(int32 x, int32 y, int32 start_x, int32 star
 	for (int i = 0; i < allObjEnter.Num() - 1; i++) {
 		GeneratePath(allObjExit[i].Key, allObjExit[i].Value, 
 			allObjEnter[i + 1].Key, allObjEnter[i + 1].Value);
+		totalPaths++;
 	}
 
 	// start recursive generation at all points
 	for (int i = 0; i < allObjEnter.Num(); i++) {
+		reachedSubsequentPath = false;
 		GenerateCell(allObjEnter[i].Key, allObjEnter[i].Value);
 		GenerateCell(allObjExit[i].Key, allObjExit[i].Value);
+		pathsFinished += pathsFinished >= totalPaths ? 0 : 1;
+		
 	}
 
+	// begin gameplay flow by marking and unlocking first objective
 	currentObjectiveIndex = 0;
 	CurrentObjectiveRoom = allObjectives[currentObjectiveIndex];
 	CurrentObjectiveRoom->isAccessible = true;
-	/*
-	int32 objX, objY, objX1, objY1;
-	GenerateBigRoom(origin_x + 2, origin_y + 2, objX, objY, objX1, objY1);
 
-
-	GeneratePath(exitX, exitY, objX, objY);
-
-	GenerateCell(entryX, entryY);
-
-	GenerateCell(exitX, exitY);
-
-	GenerateCell(objX, objY);
-
-	GenerateCell(objX1, objY1);
-	*/
-	// Generate recursive paths along all_rooms struct
-	//GenerateCell(start_x, start_y);
 }
 
 // helper for simple clockwise rotation, note that +x in unreal is reverse of usual +x
@@ -215,7 +204,6 @@ bool ADungeonGenerator::bigRoomFits(int32 x, int32 y,
 
 		bool isDoorway = room.Equals(enter);
 
-		// possibly the ugliest code ever written by mortal hands
 		if (testX + 1 < cells_x) {
 			if (all_rooms[testX + 1].roomColumns[testY].east == REQUIRED) {
 				if (isDoorway) {
@@ -604,6 +592,9 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 		}
 	}
 
+	// if the path intersects an already marked path
+	bool foundIntersection = false;
+
 	// mark the final path with required doorways
 	TArray<TPair<int32, int32>> finalPath = cellsToPaths[x1].row[y1].p;
 	for (int i = 0; i < finalPath.Num(); i++) {
@@ -648,6 +639,23 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 		if (r.east != REQUIRED) r.east = OPEN;
 		if (r.south != REQUIRED) r.south = OPEN;
 		if (r.west != REQUIRED) r.west = OPEN;
+
+		// let the generator know that this cell was found by a path
+		if (r.requiredPath) {
+			if (!foundIntersection) {
+				// if there is a path intersection then there will be one less
+				// iteration of the recursive generator
+				foundIntersection = true;
+				//totalPaths--;
+			}
+		}
+		else {
+			// this cell MUST be generated later, add to minimum counter
+			minNumCells++;
+		}
+		r.requiredPath = true;
+		r.pathKey = totalPaths;
+
 		all_rooms[curr.Key].roomColumns[curr.Value] = r;
 
 		if (testMarker) {
@@ -660,7 +668,7 @@ void ADungeonGenerator::GeneratePath(int32 x0, int32 y0, int32 x1, int32 y1)
 			}
 		}
 
-		minNumCells++;
+
 	}
 
 }
@@ -713,6 +721,15 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 	// if this room was already generated, go back (base case)
 	if (currentCell.initialized) return; 
 
+
+	// if the generator reaches another path, then it will finish it too
+	// thus if we find an intersection we can mark one path as completed
+	if (currentCell.requiredPath && currentCell.pathKey > pathsFinished &&
+		!reachedSubsequentPath) {
+		reachedSubsequentPath = true;
+		pathsFinished += pathsFinished >= totalPaths ? 0 : 1;
+	}
+
 	// status of each adjacent cell: BLOCKED (cannot connect) REQUIRED (must) OPEN (can)
 	DoorwayStatus adj_w, adj_e, adj_s, adj_n;
 
@@ -741,41 +758,50 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 	if (adj_e == DoorwayStatus::BLOCKED) max--;
 	if (adj_w == DoorwayStatus::BLOCKED) max--;
 
-
 	// pick the number of doorways based on random range and density controls
 	if (min == 0) min++;
 	int num_doorways = FMath::RandRange(min, max);
 	
-
-	
 	float tempAvg = (num_doorways + totalDegree) / (occupiedCells + 1);
 	float deltaAvg = tempAvg - avgDegree;
 	// if there would be a negative contribution, and the density is too low
-	if (deltaAvg < 0 && avgDegree < targetDensity) {
+	if (tempAvg < targetDensity) {
+	//if (deltaAvg < 0 && avgDegree < targetDensity) {
 		// chance to bump up degree to max
 		if (FMath::FRandRange(0.0f, 0.99f) < conformity) {
 			num_doorways = max;
-			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
-				TEXT("Increased Doorways to Max"));
+			//GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+			//	TEXT("Increased Doorways to Max"));
 		}
 		else {
-			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
-				TEXT("Did not set to Max"));
+			//GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+			//	TEXT("Did not set to Max"));
 		}
 	}
-	else if (deltaAvg > 0 && avgDegree > targetDensity){
+	else if (tempAvg > targetDensity) {
+	//else if ((deltaAvg > 0 && avgDegree > targetDensity)){
 		//if there would be positive contribution and the density is too high
 		if (FMath::FRandRange(0.0f, 0.99f) < conformity) {
 			num_doorways = min;
-			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
-				TEXT("Truncated Doorways to Min"));
+			//GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+			//	TEXT("Truncated Doorways to Min"));
 		}
 		else {
-			GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
-				TEXT("Did not set to Min"));
+			//GEngine->AddOnScreenDebugMessage(-1, 240.f, FColor::Green,
+			//	TEXT("Did not set to Min"));
 		}
 	}
 
+	// snap to minimum to obey the soft limit
+	if ((float)projectedNumCells >= softLimitCellRatio * minNumCells * 
+		(pathsFinished >= totalPaths? (1) : (pathsFinished + 1) / totalPaths)){
+		num_doorways = min;
+	}
+
+	if (occupiedCells == 0) {
+		num_doorways = FGenericPlatformMath::Round(targetDensity);
+		num_doorways = FMath::Clamp(num_doorways, min, max);
+	}
 
 	// to be removed later
 	bool debuggerOn = false;
@@ -891,7 +917,9 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 				occupiedCells++;
 				totalDegree += num_doorways;
 				avgDegree = totalDegree / occupiedCells;
-				if (num_doorways > 2) projectedNumCells += num_doorways - 2;
+				
+				// add number of adjacent undiscovered cells
+				projectedNumCells += num_doorways - min;
 
 				break;
 			}
@@ -905,16 +933,41 @@ void ADungeonGenerator::GenerateCell(int32 x, int32 y) {
 	// generate new cells from each doorway placed
 	// cells are in final orientation because or rotateCW helper
 	if (success) {
-		if (n) GenerateCell(x, y + 1);
-		if (e) GenerateCell(x - 1, y);
-		if (s) GenerateCell(x, y - 1);
-		if (w) GenerateCell(x + 1, y);
+		
+		// add variation to direction of recursion
+		float r = FMath::FRandRange(0.0f, 1.0f);
+		if (r < 0.25f) {
+			if (n) GenerateCell(x, y + 1);
+			if (e) GenerateCell(x - 1, y);
+			if (s) GenerateCell(x, y - 1);
+			if (w) GenerateCell(x + 1, y);
+		}
+		else if (r < 0.5f) {
+			if (w) GenerateCell(x + 1, y);
+			if (s) GenerateCell(x, y - 1);
+			if (e) GenerateCell(x - 1, y);
+			if (n) GenerateCell(x, y + 1);
+		}
+		else if (r < 0.75f) {
+			if (n) GenerateCell(x, y + 1);
+			if (s) GenerateCell(x, y - 1);
+			if (e) GenerateCell(x - 1, y);	
+			if (w) GenerateCell(x + 1, y);
+		}
+		else {
+			if (e) GenerateCell(x - 1, y);
+			if (n) GenerateCell(x, y + 1);
+			if (w) GenerateCell(x + 1, y);
+			if (s) GenerateCell(x, y - 1);
+		}
+
 	}
 	else if (debuggerOn) {
 		UE_LOG(LogTemp, Warning, TEXT("Cell generation failed"));
 	}
 }
 
+// Converts a world location into cell coordinates
 FVector2D ADungeonGenerator::WorldToCell(FVector location)
 {
 	int dx = FGenericPlatformMath::Floor((location.X + cell_length / 2.0f) / cell_length);
@@ -922,6 +975,7 @@ FVector2D ADungeonGenerator::WorldToCell(FVector location)
 	return FVector2D(origin_x + dx, origin_y + dy);
 }
 
+// Recalculates player's position in cell coordinates
 void ADungeonGenerator::CalcPlayerCell()
 {
 	if (playerReference == NULL) return;
@@ -930,6 +984,7 @@ void ADungeonGenerator::CalcPlayerCell()
 	playerY = (int)location.Y;
 }
 
+// Returns player's location in cell coordinates
 FVector2D ADungeonGenerator::GetPlayerCellLocation()
 {
 	return FVector2D(playerX, playerY);

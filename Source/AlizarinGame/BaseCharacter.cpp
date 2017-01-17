@@ -107,12 +107,21 @@ void ABaseCharacter::TickDamage_Implementation(float deltaSeconds)
 
 }
 
+void ABaseCharacter::restoreHealth()
+{
+	currentShield = maximumShield;
+	percentageShield = 1;
+	currentHealth = maximumHealth;
+	percentageHealth = 1;
+	isDead = false;
+}
+
 // Called when a life is lost. Can be overwritten by a blueprint for specific characters
 void ABaseCharacter::loseLife_Implementation()
 {
 	if (!isDead) return;
 	
-	if (remainingLives <= 0) {
+	if (remainingLives <= 1) {
 		// No more lives, destroy the object after the end of the tick
 
 		// could use an animation or particle effect option, NYI
@@ -123,11 +132,7 @@ void ABaseCharacter::loseLife_Implementation()
 
 		// probably need some other sort of indicator here
 		remainingLives--;
-		isDead = false;
 
-		currentShield = maximumShield;
-		percentageShield = 1;
-		currentHealth = maximumHealth;
-		percentageHealth = 1;
+		restoreHealth();
 	}
 }
