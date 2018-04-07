@@ -14,3 +14,7 @@ The generator is written in C++ and each 'tileset' would be a blueprint subclass
 The generator modules section is where I define what rooms are included in the generator.  If I develop a new room that I want to add, I find the list with the appropriate number of doorways (1, 2, 3, or 4) and click the (+) button. This will add a new drop-down menu that allows me to pick out my room. Here is what a single, ordinary room module looks like:
 
 ![](https://4.bp.blogspot.com/-0nKF8eWcumw/WE-BJgYFoII/AAAAAAAAAFk/VxHwiE6teZkS1o73njJraLvLLC2Zxx3IQCLcB/s1600/crossroads.PNG)
+
+The same is true for the objective rooms, where there are more specific gameplay encounters. However, those rooms can cover more than one grid cell. I also must specify a start and end room. These can also be generalized across multiple cells and even ordinary objective rooms if I want. If I developed a story mode, for example, I could make a big setpiece area for the start and end to fit the plot of the level if I wanted. And if I wanted to make another tileset altogether, I could just make another blueprint class and fill in the same lists with new modules.
+
+
