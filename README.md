@@ -5,6 +5,16 @@
 
 This was my senior design project for Fall 2016 for UPenn's digital media design program. This is a Diablo-inspired dungeon crawler created in Unreal Engine 4. The main task was to create an art-directable level generator, and the gameplay is very simple. Development has paused since then. This readme is my postmortem and will show off the highlights of the project.
 
+# High Level Generation Algorithm
+
+This is a tileset generator made to allow artists (especially me) space to make interesting tiles, so it is broken up into large modules. These modules occupy a grid, with objective / hero modules generalized to multiple grid spaces. The algorithm is:
+
+- Scatter objective rooms and remove collisions
+- BFS from each objective to the next, and mark the best path as a required path
+- Along each required path, recursively generate a hallway / maze area from the modules (pick some compatible number of doors, pick a room with that many doors, place it and recurse)
+
+This means that in the Unreal editor window, none of the level exists before runtime. Unfortunately this means no light baking or nav-mesh baking. Still, with some tweaking the updating nav-mesh was responsive enough and the level still looks good with two shadow-casting lights. It runs at 60FPS on my laptop with a GTX 970M. Generating the level itself and spawning assets is on the order of milliseconds. 
+
 # Generator Tool
 
 The generator is written in C++ and each 'tileset' would be a blueprint (Unreal's visual scripting system) subclass of the base. This provided an easy frontend editor for someone to use while working in engine. For the project I created a single tileset, a space platform, and its editor looks like this:
@@ -19,7 +29,7 @@ The same is true for the objective rooms, where there are more specific gameplay
 
 # Generation Parameters and Effects
 
-I implemented three simple parameters to control the randomness of my generator.
+I implemented three simple parameters to control the randomness of my generator. I will break down the results of testing each extensively.
 
 ## Target Density
 
