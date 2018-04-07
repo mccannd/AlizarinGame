@@ -7,11 +7,15 @@ This was my senior design project for Fall 2016 for UPenn's digital media design
 
 # High Level Generation Algorithm
 
+![](https://2.bp.blogspot.com/-ApyHo2vNw-w/WE981hhWmnI/AAAAAAAAAFQ/0cSr7z9iGgYirm0PniJmV52Wr9SX-Mf9gCLcB/s1600/ScreenShot00000.png)
+
 This is a tileset generator made to allow artists (especially me) space to make interesting tiles, so it is broken up into large modules. These modules occupy a grid, with objective / hero modules generalized to multiple grid spaces. The algorithm is:
 
 - Scatter objective rooms and remove collisions
 - BFS from each objective to the next, and mark the best path as a required path
 - Along each required path, recursively generate a hallway / maze area from the modules (pick some compatible number of doors, pick a room with that many doors, place it and recurse)
+
+There are a few twists to this algorithm described in "Generation Parameters and Effects" section.
 
 This means that in the Unreal editor window, none of the level exists before runtime. Unfortunately this means no light baking or nav-mesh baking. Still, with some tweaking the updating nav-mesh was responsive enough and the level still looks good with two shadow-casting lights. It runs at 60FPS on my laptop with a GTX 970M. Generating the level itself and spawning assets is on the order of milliseconds. 
 
@@ -51,5 +55,20 @@ Target Density of 1, of course, produces (usually) completely linear levels. In 
 
 This is the middle-right example in the table. I've marked each of the required cells (on connecting paths) with dots. Blue dots are in one path. Green are in two, which means backtracking. There is even a cell where all three intersect, with the red dot. What makes this egregiously bad is the objectives must be completed in order, so the far one must be completed before the near one. This backtracking / path intersection is a real issue because it won't become evident until a lot of work has already been done.  I will have to find a better strategy of placing rooms, or perhaps I will alternate between generating rooms and paths.
 
-
 The other issue is labelled with the yellow numbers. They show the distance in cells from the nearest required / path cells. If you explore this path in game, you'll have to walk all the way back. These kinds of large branches are mostly gone with the addition of my other parameters, but if I allow something like this to exist then there needs to be some quicker way to get back, like a teleporter.
+
+## Conformity
+
+I honestly couldn't decide whether I should call this 'conformity' or 'strictness', so I mixed it up in the diagrams. Oops. Whatever it's called, it is the percent chance that each cell will adjust to the TD. All of the examples above have conformity 1, or 100%. Conformity of 0 means that TD does not affect the generation at all. Here are some basic examples with conformity on:
+
+![](https://2.bp.blogspot.com/-XuocMrtMyT0/WE-K8GZBwsI/AAAAAAAAAGc/tiwdu0wJGF8qPaXD_8KAQu0p98NInQltgCLcB/s1600/tableStrictness.png)
+
+Now we're seeing some branches on the TD=1 levels, and some gaps in the TD=4 levels. But that still isn't quite enough control, and that's where the third parameter comes in:
+
+## Soft Limit Cell Ratio
+
+Wordy title here, unfortunately. SLCR is used to influence the number of regular rooms that show up in the level. As the level generates paths and branches, it will keep a running estimate of the projected number of rooms. The number of absolutely required rooms is the number of cells along the paths between objectives. If the generator is running and SLCR <= (# projected) / (# required), then it will snap subsequent rooms to the minimum number of doorways, hence "soft limit." I also distributed this limit along the paths found between objectives; if the SLCR did not account for that then levels would be very dense at the beginning and branch-less paths at the end. This also accounts for the possibility of intersecting paths.
+
+![](https://1.bp.blogspot.com/-zVWrh8BSLrg/WE-Mwo3J-WI/AAAAAAAAAGo/5MiNoORNGqMOTi17LLa2ijht8FOj6UibgCLcB/s1600/tableSoftLimitRatio.png)
+
+Now we have an interesting way to use our other parameters. With the example on the right, each room will be forced to maximize its number of doorways by TD=4, but it's stopped by SLCR=2. This also leads to the interesting layout with some small area to explore before objective 1 and a larger one after. So a smaller SLCR will create a more directed level, even with a bigger (or maximum) TD.
