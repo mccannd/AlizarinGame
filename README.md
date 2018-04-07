@@ -1,4 +1,8 @@
 # Alizarin
+
+[![Intro Screen](https://4.bp.blogspot.com/-J2CHOgMFEJQ/WE97dR-QU3I/AAAAAAAAAFE/LKSJ9Ujpon81zqS82MqtvyrKcBTrZVThgCLcB/s1600/TitleScreen.png)](https://player.vimeo.com/video/199881242 "Menu Screen")
+
+
 This was my senior design project for Fall 2016 for UPenn's digital media design program. This is a Diablo-inspired dungeon crawler created in Unreal Engine 4. The main task was to create an art-directable level generator, and the gameplay is very simple. Development has paused since then. This repo will show off the highlights of the project.
 
 # Generator Tool
